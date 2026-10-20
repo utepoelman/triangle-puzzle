@@ -583,11 +583,11 @@
       display: none;
     }
 
-    /* Print Stylesheet with 1.2cm Clear Page Margins */
+    /* Print Stylesheet */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 12mm; /* ~1.2 cm clear buffer around printer edge */
+        margin: 12mm;
       }
 
       body {
@@ -595,7 +595,28 @@
         overflow: visible !important;
       }
 
-      header, #nugget-area, .main-container, #start-screen, .cert-btn-bar, #certificate-container {
+      /* Hide screen UI controls by default */
+      header, #nugget-area, .main-container, #start-screen, .cert-btn-bar, #a4-print-container {
+        display: none !important;
+      }
+
+      /* Certificate print mode */
+      #certificate-container {
+        display: flex !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        padding: 0 !important;
+        background: white !important;
+      }
+
+      #certificate-view {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+
+      /* Cutout sheet print mode */
+      body.print-a4-mode #certificate-container {
         display: none !important;
       }
 
