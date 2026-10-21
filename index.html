@@ -1100,6 +1100,148 @@
     }
 
     /**
+     * Single Pair Generator strictly conforming to the chosen topic
+     */
+    function generateSinglePair(config) {
+      switch (config.topic) {
+        case 'times_tables': {
+          let factors = [];
+          if (config.ttRange === '2_5_10') factors = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+          else if (config.ttRange === '10') factors = [0,1,2,3,4,5,6,7,8,9,10];
+          else factors = [0,1,2,3,4,5,6,7,8,9,10,11,12];
+
+          let a = factors[Math.floor(Math.random() * factors.length)];
+          let b = factors[Math.floor(Math.random() * factors.length)];
+
+          let op = config.ttOp;
+          if (op === 'mixed') op = Math.random() > 0.5 ? 'mult' : 'div';
+
+          if (op === 'div') {
+            if (a === 0) a = 1;
+            let product = a * b;
+            return [`${product} ÷ ${a}`, String(b)];
+          } else {
+            return [`${a} × ${b}`, String(a * b)];
+          }
+        }
+
+        case 'fractions_decimals': {
+          const termFracs = [
+            [1, 2, "0.5"], [1, 4, "0.25"], [3, 4, "0.75"],
+            [1, 5, "0.2"], [2, 5, "0.4"], [3, 5, "0.6"], [4, 5, "0.8"],
+            [1, 8, "0.125"], [3, 8, "0.375"], [5, 8, "0.625"], [7, 8, "0.875"],
+            [1, 10, "0.1"], [3, 10, "0.3"], [7, 10, "0.7"], [9, 10, "0.9"]
+          ];
+          const recurFracs = [
+            [1, 3, "0.333..."], [2, 3, "0.666..."],
+            [1, 6, "0.166..."], [5, 6, "0.833..."]
+          ];
+
+          let pool = [...termFracs];
+          if (config.fdLevel === '2') pool = pool.concat(recurFracs);
+          let item = pool[Math.floor(Math.random() * pool.length)];
+          return [`${item[0]}/${item[1]}`, item[2]];
+        }
+
+        case 'decimals_percentages': {
+          const decPool = [
+            [0.05, "5%"], [0.1, "10%"], [0.15, "15%"], [0.2, "20%"], [0.25, "25%"],
+            [0.3, "30%"], [0.35, "35%"], [0.4, "40%"], [0.45, "45%"], [0.5, "50%"],
+            [0.55, "55%"], [0.6, "60%"], [0.65, "65%"], [0.7, "70%"], [0.75, "75%"],
+            [0.8, "80%"], [0.85, "85%"], [0.9, "90%"], [0.95, "95%"], [1, "100%"],
+            [1.25, "125%"], [1.5, "150%"], [1.75, "175%"], [2, "200%"]
+          ];
+          let item = decPool[Math.floor(Math.random() * decPool.length)];
+          return [String(item[0]), item[1]];
+        }
+
+        case 'equivalent_fractions': {
+          const baseFracs = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5], [3,5], [4,5], [1,6], [5,6], [1,8], [3,8], [5,8], [7,8], [1,10], [3,10], [7,10], [9,10]];
+          let base = baseFracs[Math.floor(Math.random() * baseFracs.length)];
+          let n = base[0], d = base[1];
+
+          if (config.efLevel === '1') {
+            let mult = Math.floor(Math.random() * 5) + 2;
+            return [`${n}/${d}`, `${n * mult}/${d * mult}`];
+          } else {
+            let m1 = Math.floor(Math.random() * 4) + 2;
+            let m2 = Math.floor(Math.random() * 4) + 2;
+            while (m1 === m2) m2 = Math.floor(Math.random() * 4) + 2;
+            return [`${n * m1}/${d * m1}`, `${n * m2}/${d * m2}`];
+          }
+        }
+
+        case 'add_sub': {
+          let maxNum = 9, minNum = 1;
+          if (config.asRange === '2') { minNum = 10; maxNum = 99; }
+          if (config.asRange === '3') { minNum = 100; maxNum = 999; }
+
+          let isSub = (config.asOps === 'mixed') && (Math.random() > 0.5);
+
+          if (isSub) {
+            let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+            let b = Math.floor(Math.random() * (a - minNum + 1)) + minNum;
+            return [`${a} - ${b}`, String(a - b)];
+          } else {
+            let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+            let b = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+            return [`${a} + ${b}`, String(a + b)];
+          }
+        }
+
+        case 'mixed_improper': {
+          let whole = Math.floor(Math.random() * 6) + 1;
+          const denoms = [2, 3, 4, 5, 6, 8, 10, 12];
+          let d = denoms[Math.floor(Math.random() * denoms.length)];
+
+          const coprimes = [];
+          for (let k = 1; k < d; k++) {
+            if (gcd(k, d) === 1) coprimes.push(k);
+          }
+          let n = coprimes[Math.floor(Math.random() * coprimes.length)];
+
+          let improperNum = whole * d + n;
+          return [`${whole} ${n}/${d}`, `${improperNum}/${d}`];
+        }
+
+        case 'integer_ops': {
+          let ops = [];
+          if (config.intAdd) ops.push('+');
+          if (config.intSub) ops.push('-');
+          if (config.intMult) ops.push('×');
+          if (config.intDiv) ops.push('÷');
+          if (ops.length === 0) ops.push('+');
+
+          let op = ops[Math.floor(Math.random() * ops.length)];
+          let a = Math.floor(Math.random() * 19) - 9;
+          let b = Math.floor(Math.random() * 19) - 9;
+          while (b === 0 && op === '÷') b = Math.floor(Math.random() * 8) + 1;
+
+          function fmtNeg(x) { return x < 0 ? `(${x})` : `${x}`; }
+
+          if (op === '+') return [`${fmtNeg(a)} + ${fmtNeg(b)}`, String(a + b)];
+          else if (op === '-') return [`${fmtNeg(a)} - ${fmtNeg(b)}`, String(a - b)];
+          else if (op === '×') return [`${fmtNeg(a)} × ${fmtNeg(b)}`, String(a * b)];
+          else if (op === '÷') {
+            let prod = a * b;
+            return [`${fmtNeg(prod)} ÷ ${fmtNeg(b)}`, String(a)];
+          }
+          break;
+        }
+
+        case 'square_roots': {
+          let mode = config.srMode;
+          if (mode === 'both') mode = Math.random() > 0.5 ? 'squares' : 'roots';
+
+          let base = Math.floor(Math.random() * 25) + 1;
+          if (mode === 'squares') return [`${base}²`, String(base * base)];
+          else return [`√${base * base}`, String(base)];
+        }
+      }
+      return ["1 + 1", "2"];
+    }
+
+    /**
      * Multi-Topic Pair Generator Engine
      */
     function generateFreshPairs(numPairs, config) {
@@ -1109,151 +1251,7 @@
 
       while (pairs.length < numPairs && attempts < 3000) {
         attempts++;
-        let p = null;
-
-        switch (config.topic) {
-          case 'times_tables': {
-            let factors = [];
-            if (config.ttRange === '2_5_10') factors = [2, 5, 10];
-            else if (config.ttRange === '10') factors = [0,1,2,3,4,5,6,7,8,9,10];
-            else factors = [0,1,2,3,4,5,6,7,8,9,10,11,12];
-
-            let a = factors[Math.floor(Math.random() * factors.length)];
-            let b = factors[Math.floor(Math.random() * factors.length)];
-
-            let op = config.ttOp;
-            if (op === 'mixed') op = Math.random() > 0.5 ? 'mult' : 'div';
-
-            if (op === 'div') {
-              if (a === 0) a = 1;
-              let product = a * b;
-              p = [`${product} ÷ ${a}`, String(b)];
-            } else {
-              p = [`${a} × ${b}`, String(a * b)];
-            }
-            break;
-          }
-
-          case 'fractions_decimals': {
-            const termFracs = [
-              [1, 2, "0.5"], [1, 4, "0.25"], [3, 4, "0.75"],
-              [1, 5, "0.2"], [2, 5, "0.4"], [3, 5, "0.6"], [4, 5, "0.8"],
-              [1, 8, "0.125"], [3, 8, "0.375"], [5, 8, "0.625"], [7, 8, "0.875"],
-              [1, 10, "0.1"], [3, 10, "0.3"], [7, 10, "0.7"], [9, 10, "0.9"]
-            ];
-            const recurFracs = [
-              [1, 3, "0.333..."], [2, 3, "0.666..."],
-              [1, 6, "0.166..."], [5, 6, "0.833..."]
-            ];
-
-            let pool = [...termFracs];
-            if (config.fdLevel === '2') pool = pool.concat(recurFracs);
-            let item = pool[Math.floor(Math.random() * pool.length)];
-            p = [`${item[0]}/${item[1]}`, item[2]];
-            break;
-          }
-
-          case 'decimals_percentages': {
-            const decPool = [
-              [0.05, "5%"], [0.1, "10%"], [0.15, "15%"], [0.2, "20%"], [0.25, "25%"],
-              [0.3, "30%"], [0.4, "40%"], [0.5, "50%"], [0.6, "60%"], [0.75, "75%"],
-              [0.8, "80%"], [0.9, "90%"], [1, "100%"], [1.25, "125%"], [1.5, "150%"]
-            ];
-            let item = decPool[Math.floor(Math.random() * decPool.length)];
-            p = [String(item[0]), item[1]];
-            break;
-          }
-
-          case 'equivalent_fractions': {
-            const baseFracs = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5], [3,5], [4,5], [1,6], [5,6]];
-            let base = baseFracs[Math.floor(Math.random() * baseFracs.length)];
-            let n = base[0], d = base[1];
-
-            if (config.efLevel === '1') {
-              let mult = Math.floor(Math.random() * 4) + 2;
-              p = [`${n}/${d}`, `${n * mult}/${d * mult}`];
-            } else {
-              let m1 = Math.floor(Math.random() * 3) + 2;
-              let m2 = Math.floor(Math.random() * 3) + 2;
-              while (m1 === m2) m2 = Math.floor(Math.random() * 3) + 2;
-              p = [`${n * m1}/${d * m1}`, `${n * m2}/${d * m2}`];
-            }
-            break;
-          }
-
-          case 'add_sub': {
-            let maxNum = 9, minNum = 1;
-            if (config.asRange === '2') { minNum = 10; maxNum = 99; }
-            if (config.asRange === '3') { minNum = 100; maxNum = 999; }
-
-            let isSub = (config.asOps === 'mixed') && (Math.random() > 0.5);
-
-            if (isSub) {
-              let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-              let b = Math.floor(Math.random() * (a - minNum + 1)) + minNum;
-              p = [`${a} - ${b}`, String(a - b)];
-            } else {
-              let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-              let b = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-              p = [`${a} + ${b}`, String(a + b)];
-            }
-            break;
-          }
-
-          case 'mixed_improper': {
-            let whole = Math.floor(Math.random() * 5) + 1;
-            const denoms = [2, 3, 4, 5, 6, 8, 10];
-            let d = denoms[Math.floor(Math.random() * denoms.length)];
-
-            // Choose n coprime to d to guarantee fully simplified fractions
-            const coprimes = [];
-            for (let k = 1; k < d; k++) {
-              if (gcd(k, d) === 1) coprimes.push(k);
-            }
-            let n = coprimes[Math.floor(Math.random() * coprimes.length)];
-
-            let improperNum = whole * d + n;
-            p = [`${whole} ${n}/${d}`, `${improperNum}/${d}`];
-            break;
-          }
-
-          case 'integer_ops': {
-            let ops = [];
-            if (config.intAdd) ops.push('+');
-            if (config.intSub) ops.push('-');
-            if (config.intMult) ops.push('×');
-            if (config.intDiv) ops.push('÷');
-            if (ops.length === 0) ops.push('+');
-
-            let op = ops[Math.floor(Math.random() * ops.length)];
-            let a = Math.floor(Math.random() * 19) - 9;
-            let b = Math.floor(Math.random() * 19) - 9;
-            while (b === 0 && op === '÷') b = Math.floor(Math.random() * 8) + 1;
-
-            // Formats negative numbers inside expressions with brackets
-            function fmtNeg(x) { return x < 0 ? `(${x})` : `${x}`; }
-
-            // Final answers do NOT use brackets
-            if (op === '+') p = [`${fmtNeg(a)} + ${fmtNeg(b)}`, String(a + b)];
-            else if (op === '-') p = [`${fmtNeg(a)} - ${fmtNeg(b)}`, String(a - b)];
-            else if (op === '×') p = [`${fmtNeg(a)} × ${fmtNeg(b)}`, String(a * b)];
-            else if (op === '÷') {
-              let prod = a * b;
-              p = [`${fmtNeg(prod)} ÷ ${fmtNeg(b)}`, String(a)];
-            }
-            break;
-          }
-
-          case 'square_roots': {
-            let mode = config.srMode;
-            if (mode === 'both') mode = Math.random() > 0.5 ? 'squares' : 'roots';
-
-            let base = Math.floor(Math.random() * 12) + 1;
-            if (mode === 'squares') p = [`${base}²`, String(base * base)];
-            else p = [`√${base * base}`, String(base)];
-            break;
-          }
-        }
+        let p = generateSinglePair(config);
 
         if (p) {
           if (Math.random() > 0.5) p = [p[1], p[0]];
@@ -1265,8 +1263,11 @@
         }
       }
 
+      // If unique combinations run out, continue generating topic-conforming pairs (allowing duplicates)
       while (pairs.length < numPairs) {
-        pairs.push([`1 + ${pairs.length}`, String(1 + pairs.length)]);
+        let p = generateSinglePair(config);
+        if (Math.random() > 0.5) p = [p[1], p[0]];
+        pairs.push(p);
       }
 
       return pairs;
@@ -1541,7 +1542,7 @@
             e.dataTransfer.setData("text/plain", String(piece.id));
           });
 
-          // Clicking a placed board piece toggles selection (locks in place, does NOT return to tray)
+          // Clicking a placed board piece toggles selection
           g.addEventListener("click", (e) => {
             e.stopPropagation();
             selectedPieceId = (selectedPieceId === piece.id) ? null : piece.id;
@@ -1702,7 +1703,7 @@
 
       if (!elements || elements.length === 0) return;
 
-      // 1. Check if dropped directly over a slot (or slot outline under a piece)
+      // 1. Check if dropped directly over a slot
       let targetSlotId = null;
       for (const el of elements) {
         if (el.getAttribute && el.getAttribute("data-slot-id") !== null) {
@@ -1732,7 +1733,7 @@
         return;
       }
 
-      // 3. Dropped elsewhere on board: keep in current position or refresh view
+      // 3. Dropped elsewhere on board
       renderAll();
     }
 
@@ -1791,7 +1792,7 @@
       });
 
       pieceState[pieceId].slotId = slotId;
-      selectedPieceId = pieceId; // Keeps piece selected so user can press Space to rotate
+      selectedPieceId = pieceId;
       clearFeedback();
       renderAll();
       checkAutoVictory();
@@ -2058,10 +2059,9 @@
       a4Meta.textContent = `Topic: ${topicDisplayTitle} | Size: ${PIECES.length} Pieces`;
 
       const a4Svg = document.getElementById("a4-pieces-svg");
-      a4Svg.setAttribute("viewBox", "0 0 720 960"); // Maximised A4 printable canvas
+      a4Svg.setAttribute("viewBox", "0 0 720 960");
       a4Svg.innerHTML = '';
 
-      // Shuffled copy of pieces so touching edges do NOT match on sheet
       const printPieces = shuffleArray([...PIECES]);
       const N = printPieces.length;
 
@@ -2099,7 +2099,6 @@
         const cx = startX + (c + 1) * (bestS / 2);
         const cy = startY + r * H + (isUp ? (2 / 3) * H : (1 / 3) * H);
 
-        // Random rotation for extra scrambling
         const rot = (isUp ? 0 : 60) + Math.floor(Math.random() * 3) * 120;
 
         const g = createPieceSVGGroup(piece, geomScale, selectedPrintBgColor);
