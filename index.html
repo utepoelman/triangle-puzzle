@@ -787,6 +787,8 @@
     <div class="controls">
       <button class="btn secondary" onclick="openShareDialog('current')" title="Create a shareable link to this puzzle">🔗 Share Link</button>
       <button id="btn-print-a4" class="btn secondary" onclick="printA4CutoutSheet()" title="Print physical cutout pieces on A4 paper">🖨️ Print A4 Sheet</button>
+      <button id="btn-rotate-left" class="btn secondary" title="Turn the selected piece anticlockwise (or twist it with two fingers)">↶ Turn Left</button>
+      <button id="btn-rotate-right" class="btn secondary" title="Turn the selected piece clockwise (or twist it with two fingers)">↷ Turn Right</button>
       <button id="btn-shuffle" class="btn secondary">🔀 Scramble Tray</button>
       <button id="btn-reset" class="btn secondary">↺ Reset Board</button>
       <button id="btn-check" class="btn">✔ Check Answers</button>
@@ -2524,6 +2526,7 @@
 
           g.addEventListener("click", (e) => {
             e.stopPropagation();
+            if (Date.now() < suppressClickUntil) return;
             selectedPieceId = (selectedPieceId === piece.id) ? null : piece.id;
             renderAll();
           });
@@ -2578,6 +2581,7 @@
           });
 
           card.addEventListener("click", () => {
+            if (Date.now() < suppressClickUntil) return;
             selectedPieceId = (selectedPieceId === piece.id) ? null : piece.id;
             renderAll();
           });
@@ -2602,6 +2606,8 @@
 
       element.addEventListener("pointerdown", (e) => {
         if (e.button !== 0 && e.pointerType === "mouse") return;
+        if (gestureLock) return;   // a second finger is down: that is a twist, not a drag
+        if (e.pointerType === "touch" && gesturePieceId === null) gesturePieceId = pieceId;
         isPointerDown = true;
         startX = e.clientX;
         startY = e.clientY;
@@ -2609,7 +2615,7 @@
         draggedPieceId = pieceId;
 
         const onPointerMove = (e) => {
-          if (!isPointerDown) return;
+          if (!isPointerDown || gestureLock) return;
           const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
           if (dist > 5 && !hasDragged) {
             hasDragged = true;
@@ -2629,6 +2635,12 @@
           window.removeEventListener("pointermove", onPointerMove);
           window.removeEventListener("pointerup", onPointerUp);
           window.removeEventListener("pointercancel", onPointerUp);
+
+          if (gestureLock) {
+            // Two-finger twist in progress or just finished: never drop a piece
+            if (hasDragged) stopFloatingDragPreview();
+            return;
+          }
 
           if (hasDragged) {
             stopFloatingDragPreview();
@@ -2779,9 +2791,9 @@
       renderAll();
     }
 
-    function rotatePiece(pieceId) {
+    function rotatePiece(pieceId, step = 60) {
       if (pieceId === null || isSolved) return;
-      pieceState[pieceId].rotation = (pieceState[pieceId].rotation + 60) % 360;
+      pieceState[pieceId].rotation = (pieceState[pieceId].rotation + step + 360) % 360;
       clearFeedback();
       renderAll();
       checkAutoVictory();
@@ -2977,7 +2989,7 @@
 
       document.getElementById("start-screen").classList.add("hidden");
       startTime = new Date();
-      setSpeech(`Good luck, ${playerName}! Drag pieces onto the grid. Press Space to rotate!`);
+      setSpeech(`Good luck, ${playerName}! Drag pieces onto the grid. ${navigator.maxTouchPoints > 0 ? "Twist a piece with two fingers, or tap Turn Left / Turn Right, to rotate it!" : "Press Space to rotate!"}`);
     }
 
     function showCertificate() {
@@ -3175,6 +3187,80 @@
         if (selectedPieceId !== null) rotatePiece(selectedPieceId);
       }
     });
+
+    // Turn buttons (for tablets and phones without a keyboard)
+    function rotateSelected(step) {
+      if (selectedPieceId === null) {
+        setSpeech("Tap a piece first, then turn it!");
+        return;
+      }
+      rotatePiece(selectedPieceId, step);
+    }
+    document.getElementById("btn-rotate-left").addEventListener("click", () => rotateSelected(-60));
+    document.getElementById("btn-rotate-right").addEventListener("click", () => rotateSelected(60));
+
+    /**
+     * Two-finger twist: put two fingers down (the first on a piece) and turn them like a
+     * real puzzle piece. The piece snaps to the nearest 60 degrees as the fingers twist.
+     */
+    const touchPointers = new Map();   // pointerId -> {x, y} for fingers currently down
+    let gesturePieceId = null;         // piece under the first finger
+    let gestureLock = false;           // true while two or more fingers are down
+    let twist = null;                  // {pieceId, last, acc} while twisting
+    let suppressClickUntil = 0;        // ignore the tap that ends a gesture
+
+    function fingerAngle(a, b) {
+      return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+    }
+
+    window.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "touch") return;
+      touchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touchPointers.size < 2) return;
+
+      gestureLock = true;
+      stopFloatingDragPreview();
+      if (gesturePieceId !== null && !isSolved) {
+        const pts = [...touchPointers.values()];
+        twist = { pieceId: gesturePieceId, last: fingerAngle(pts[0], pts[1]), acc: 0 };
+        selectedPieceId = gesturePieceId;
+        // Keep receiving finger events even though the piece is redrawn as it turns
+        touchPointers.forEach((_, id) => {
+          try { document.body.setPointerCapture(id); } catch (err) { /* ignore */ }
+        });
+      }
+    }, true);
+
+    window.addEventListener("pointermove", (e) => {
+      if (!touchPointers.has(e.pointerId)) return;
+      touchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!twist || touchPointers.size < 2) return;
+
+      const pts = [...touchPointers.values()];
+      const ang = fingerAngle(pts[0], pts[1]);
+      let d = ang - twist.last;
+      if (d > 180) d -= 360;
+      if (d < -180) d += 360;
+      twist.last = ang;
+      twist.acc += d;
+
+      while (twist.acc >= 30) { twist.acc -= 60; rotatePiece(twist.pieceId, 60); }
+      while (twist.acc <= -30) { twist.acc += 60; rotatePiece(twist.pieceId, -60); }
+      suppressClickUntil = Date.now() + 500;
+    });
+
+    function endTouchPointer(e) {
+      if (!touchPointers.delete(e.pointerId)) return;
+      if (touchPointers.size < 2) twist = null;
+      if (touchPointers.size === 0) {
+        if (gestureLock) suppressClickUntil = Date.now() + 400;
+        gesturePieceId = null;
+        // Reset after the drag handlers have seen this pointer-up
+        setTimeout(() => { if (touchPointers.size === 0) gestureLock = false; }, 0);
+      }
+    }
+    window.addEventListener("pointerup", endTouchPointer);
+    window.addEventListener("pointercancel", endTouchPointer);
 
     document.getElementById("board-svg").addEventListener("click", (e) => {
       if (e.target.tagName === "svg") {
