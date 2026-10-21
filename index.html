@@ -15,7 +15,7 @@
       --border-color: #f1f2f6;
       --slot-bg: #ffeaa7;
       --piece-bg: #d0e6f6; /* Default pastel light blue for both screen & print */
-      --piece-border: #2d3436; /* Crisp black edge borders */
+      --piece-border: #d63031;
       --piece-selected: #fdcb6e;
       --success-color: #00b894;
       --error-color: #d63031;
@@ -277,11 +277,6 @@
       padding: 0.6rem;
       gap: 0.4rem;
       flex-shrink: 0;
-      transition: background-color 0.2s;
-    }
-
-    .workspace.drag-over {
-      background-color: #ffeaea;
     }
 
     .workspace-header {
@@ -315,12 +310,6 @@
       gap: 0.6rem;
       justify-content: center;
       align-content: start;
-      transition: border-color 0.2s, background-color 0.2s;
-    }
-
-    .tray-scroll.drag-over {
-      border-color: var(--primary-color);
-      background-color: #fff0f0;
     }
 
     /* Resizer / Draggable Boundary Line */
@@ -345,14 +334,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: grab;
+      cursor: pointer;
       transition: transform 0.18s ease, border-color 0.18s, box-shadow 0.18s;
       box-sizing: border-box;
-      touch-action: none;
-    }
-
-    .tray-card:active {
-      cursor: grabbing;
     }
 
     .tray-card:hover {
@@ -389,16 +373,10 @@
       max-height: 800px;
     }
 
-    /* SVG Piece Mechanics & Ultra-Sharp Typography */
+    /* SVG Piece Mechanics */
     .puzzle-piece {
       cursor: grab;
       transition: transform 0.18s ease-out;
-      touch-action: none;
-    }
-
-    .puzzle-piece text {
-      font-family: 'Trebuchet MS', 'Arial', -apple-system, BlinkMacSystemFont, sans-serif;
-      text-rendering: geometricPrecision;
     }
 
     .puzzle-piece:active {
@@ -448,18 +426,6 @@
     .edge-line.incorrect {
       stroke: var(--error-color);
       filter: drop-shadow(0px 0px 4px rgba(214, 48, 49, 0.8));
-    }
-
-    /* Floating Drag Preview Element */
-    #drag-preview {
-      position: fixed;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      z-index: 5000;
-      transform: translate(-50%, -50%);
-      display: none;
-      filter: drop-shadow(0px 8px 18px rgba(0,0,0,0.3));
     }
 
     /* Toast Notification */
@@ -583,11 +549,11 @@
       display: none;
     }
 
-    /* Print Stylesheet */
+    /* Print Stylesheet with 1.2cm Clear Page Margins */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 12mm;
+        margin: 12mm; /* ~1.2 cm clear buffer around printer edge */
       }
 
       body {
@@ -595,28 +561,7 @@
         overflow: visible !important;
       }
 
-      /* Hide screen UI controls by default */
-      header, #nugget-area, .main-container, #start-screen, .cert-btn-bar, #a4-print-container {
-        display: none !important;
-      }
-
-      /* Certificate print mode */
-      #certificate-container {
-        display: flex !important;
-        position: static !important;
-        width: 100% !important;
-        height: auto !important;
-        padding: 0 !important;
-        background: white !important;
-      }
-
-      #certificate-view {
-        box-shadow: none !important;
-        page-break-inside: avoid;
-      }
-
-      /* Cutout sheet print mode */
-      body.print-a4-mode #certificate-container {
+      header, #nugget-area, .main-container, #start-screen, .cert-btn-bar, #certificate-container {
         display: none !important;
       }
 
@@ -675,9 +620,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Floating Drag Preview -->
-  <div id="drag-preview"></div>
 
   <!-- Main Top Header -->
   <header id="main-header" class="no-print">
@@ -797,7 +739,7 @@
         </div>
 
         <div id="panel-integer_ops" class="sub-options-panel hidden">
-          <span style="font-size: 0.85rem; font-weight: bold;">Include Operations (Negatives in brackets in expressions):</span>
+          <span style="font-size: 0.85rem; font-weight: bold;">Include Operations (Negatives in brackets):</span>
           <div class="checkbox-grid">
             <label><input type="checkbox" id="int-add" checked> Addition (+)</label>
             <label><input type="checkbox" id="int-sub" checked> Subtraction (-)</label>
@@ -1100,148 +1042,6 @@
     }
 
     /**
-     * Single Pair Generator strictly conforming to the chosen topic
-     */
-    function generateSinglePair(config) {
-      switch (config.topic) {
-        case 'times_tables': {
-          let factors = [];
-          if (config.ttRange === '2_5_10') factors = [2, 3, 4, 5, 6, 7, 8, 9, 10];
-          else if (config.ttRange === '10') factors = [0,1,2,3,4,5,6,7,8,9,10];
-          else factors = [0,1,2,3,4,5,6,7,8,9,10,11,12];
-
-          let a = factors[Math.floor(Math.random() * factors.length)];
-          let b = factors[Math.floor(Math.random() * factors.length)];
-
-          let op = config.ttOp;
-          if (op === 'mixed') op = Math.random() > 0.5 ? 'mult' : 'div';
-
-          if (op === 'div') {
-            if (a === 0) a = 1;
-            let product = a * b;
-            return [`${product} ÷ ${a}`, String(b)];
-          } else {
-            return [`${a} × ${b}`, String(a * b)];
-          }
-        }
-
-        case 'fractions_decimals': {
-          const termFracs = [
-            [1, 2, "0.5"], [1, 4, "0.25"], [3, 4, "0.75"],
-            [1, 5, "0.2"], [2, 5, "0.4"], [3, 5, "0.6"], [4, 5, "0.8"],
-            [1, 8, "0.125"], [3, 8, "0.375"], [5, 8, "0.625"], [7, 8, "0.875"],
-            [1, 10, "0.1"], [3, 10, "0.3"], [7, 10, "0.7"], [9, 10, "0.9"]
-          ];
-          const recurFracs = [
-            [1, 3, "0.333..."], [2, 3, "0.666..."],
-            [1, 6, "0.166..."], [5, 6, "0.833..."]
-          ];
-
-          let pool = [...termFracs];
-          if (config.fdLevel === '2') pool = pool.concat(recurFracs);
-          let item = pool[Math.floor(Math.random() * pool.length)];
-          return [`${item[0]}/${item[1]}`, item[2]];
-        }
-
-        case 'decimals_percentages': {
-          const decPool = [
-            [0.05, "5%"], [0.1, "10%"], [0.15, "15%"], [0.2, "20%"], [0.25, "25%"],
-            [0.3, "30%"], [0.35, "35%"], [0.4, "40%"], [0.45, "45%"], [0.5, "50%"],
-            [0.55, "55%"], [0.6, "60%"], [0.65, "65%"], [0.7, "70%"], [0.75, "75%"],
-            [0.8, "80%"], [0.85, "85%"], [0.9, "90%"], [0.95, "95%"], [1, "100%"],
-            [1.25, "125%"], [1.5, "150%"], [1.75, "175%"], [2, "200%"]
-          ];
-          let item = decPool[Math.floor(Math.random() * decPool.length)];
-          return [String(item[0]), item[1]];
-        }
-
-        case 'equivalent_fractions': {
-          const baseFracs = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5], [3,5], [4,5], [1,6], [5,6], [1,8], [3,8], [5,8], [7,8], [1,10], [3,10], [7,10], [9,10]];
-          let base = baseFracs[Math.floor(Math.random() * baseFracs.length)];
-          let n = base[0], d = base[1];
-
-          if (config.efLevel === '1') {
-            let mult = Math.floor(Math.random() * 5) + 2;
-            return [`${n}/${d}`, `${n * mult}/${d * mult}`];
-          } else {
-            let m1 = Math.floor(Math.random() * 4) + 2;
-            let m2 = Math.floor(Math.random() * 4) + 2;
-            while (m1 === m2) m2 = Math.floor(Math.random() * 4) + 2;
-            return [`${n * m1}/${d * m1}`, `${n * m2}/${d * m2}`];
-          }
-        }
-
-        case 'add_sub': {
-          let maxNum = 9, minNum = 1;
-          if (config.asRange === '2') { minNum = 10; maxNum = 99; }
-          if (config.asRange === '3') { minNum = 100; maxNum = 999; }
-
-          let isSub = (config.asOps === 'mixed') && (Math.random() > 0.5);
-
-          if (isSub) {
-            let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-            let b = Math.floor(Math.random() * (a - minNum + 1)) + minNum;
-            return [`${a} - ${b}`, String(a - b)];
-          } else {
-            let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-            let b = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-            return [`${a} + ${b}`, String(a + b)];
-          }
-        }
-
-        case 'mixed_improper': {
-          let whole = Math.floor(Math.random() * 6) + 1;
-          const denoms = [2, 3, 4, 5, 6, 8, 10, 12];
-          let d = denoms[Math.floor(Math.random() * denoms.length)];
-
-          const coprimes = [];
-          for (let k = 1; k < d; k++) {
-            if (gcd(k, d) === 1) coprimes.push(k);
-          }
-          let n = coprimes[Math.floor(Math.random() * coprimes.length)];
-
-          let improperNum = whole * d + n;
-          return [`${whole} ${n}/${d}`, `${improperNum}/${d}`];
-        }
-
-        case 'integer_ops': {
-          let ops = [];
-          if (config.intAdd) ops.push('+');
-          if (config.intSub) ops.push('-');
-          if (config.intMult) ops.push('×');
-          if (config.intDiv) ops.push('÷');
-          if (ops.length === 0) ops.push('+');
-
-          let op = ops[Math.floor(Math.random() * ops.length)];
-          let a = Math.floor(Math.random() * 19) - 9;
-          let b = Math.floor(Math.random() * 19) - 9;
-          while (b === 0 && op === '÷') b = Math.floor(Math.random() * 8) + 1;
-
-          function fmtNeg(x) { return x < 0 ? `(${x})` : `${x}`; }
-
-          if (op === '+') return [`${fmtNeg(a)} + ${fmtNeg(b)}`, String(a + b)];
-          else if (op === '-') return [`${fmtNeg(a)} - ${fmtNeg(b)}`, String(a - b)];
-          else if (op === '×') return [`${fmtNeg(a)} × ${fmtNeg(b)}`, String(a * b)];
-          else if (op === '÷') {
-            let prod = a * b;
-            return [`${fmtNeg(prod)} ÷ ${fmtNeg(b)}`, String(a)];
-          }
-          break;
-        }
-
-        case 'square_roots': {
-          let mode = config.srMode;
-          if (mode === 'both') mode = Math.random() > 0.5 ? 'squares' : 'roots';
-
-          let base = Math.floor(Math.random() * 25) + 1;
-          if (mode === 'squares') return [`${base}²`, String(base * base)];
-          else return [`√${base * base}`, String(base)];
-        }
-      }
-      return ["1 + 1", "2"];
-    }
-
-    /**
      * Multi-Topic Pair Generator Engine
      */
     function generateFreshPairs(numPairs, config) {
@@ -1251,7 +1051,149 @@
 
       while (pairs.length < numPairs && attempts < 3000) {
         attempts++;
-        let p = generateSinglePair(config);
+        let p = null;
+
+        switch (config.topic) {
+          case 'times_tables': {
+            let factors = [];
+            if (config.ttRange === '2_5_10') factors = [2, 5, 10];
+            else if (config.ttRange === '10') factors = [0,1,2,3,4,5,6,7,8,9,10];
+            else factors = [0,1,2,3,4,5,6,7,8,9,10,11,12];
+
+            let a = factors[Math.floor(Math.random() * factors.length)];
+            let b = factors[Math.floor(Math.random() * factors.length)];
+
+            let op = config.ttOp;
+            if (op === 'mixed') op = Math.random() > 0.5 ? 'mult' : 'div';
+
+            if (op === 'div') {
+              if (a === 0) a = 1;
+              let product = a * b;
+              p = [`${product} ÷ ${a}`, String(b)];
+            } else {
+              p = [`${a} × ${b}`, String(a * b)];
+            }
+            break;
+          }
+
+          case 'fractions_decimals': {
+            const termFracs = [
+              [1, 2, "0.5"], [1, 4, "0.25"], [3, 4, "0.75"],
+              [1, 5, "0.2"], [2, 5, "0.4"], [3, 5, "0.6"], [4, 5, "0.8"],
+              [1, 8, "0.125"], [3, 8, "0.375"], [5, 8, "0.625"], [7, 8, "0.875"],
+              [1, 10, "0.1"], [3, 10, "0.3"], [7, 10, "0.7"], [9, 10, "0.9"]
+            ];
+            const recurFracs = [
+              [1, 3, "0.333..."], [2, 3, "0.666..."],
+              [1, 6, "0.166..."], [5, 6, "0.833..."]
+            ];
+
+            let pool = [...termFracs];
+            if (config.fdLevel === '2') pool = pool.concat(recurFracs);
+            let item = pool[Math.floor(Math.random() * pool.length)];
+            p = [`${item[0]}/${item[1]}`, item[2]];
+            break;
+          }
+
+          case 'decimals_percentages': {
+            const decPool = [
+              [0.05, "5%"], [0.1, "10%"], [0.15, "15%"], [0.2, "20%"], [0.25, "25%"],
+              [0.3, "30%"], [0.4, "40%"], [0.5, "50%"], [0.6, "60%"], [0.75, "75%"],
+              [0.8, "80%"], [0.9, "90%"], [1, "100%"], [1.25, "125%"], [1.5, "150%"]
+            ];
+            let item = decPool[Math.floor(Math.random() * decPool.length)];
+            p = [String(item[0]), item[1]];
+            break;
+          }
+
+          case 'equivalent_fractions': {
+            const baseFracs = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5], [3,5], [4,5], [1,6], [5,6]];
+            let base = baseFracs[Math.floor(Math.random() * baseFracs.length)];
+            let n = base[0], d = base[1];
+
+            if (config.efLevel === '1') {
+              let mult = Math.floor(Math.random() * 4) + 2;
+              p = [`${n}/${d}`, `${n * mult}/${d * mult}`];
+            } else {
+              let m1 = Math.floor(Math.random() * 3) + 2;
+              let m2 = Math.floor(Math.random() * 3) + 2;
+              while (m1 === m2) m2 = Math.floor(Math.random() * 3) + 2;
+              p = [`${n * m1}/${d * m1}`, `${n * m2}/${d * m2}`];
+            }
+            break;
+          }
+
+          case 'add_sub': {
+            let maxNum = 9, minNum = 1;
+            if (config.asRange === '2') { minNum = 10; maxNum = 99; }
+            if (config.asRange === '3') { minNum = 100; maxNum = 999; }
+
+            let isSub = (config.asOps === 'mixed') && (Math.random() > 0.5);
+
+            if (isSub) {
+              let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+              let b = Math.floor(Math.random() * (a - minNum + 1)) + minNum;
+              p = [`${a} - ${b}`, String(a - b)];
+            } else {
+              let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+              let b = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+              p = [`${a} + ${b}`, String(a + b)];
+            }
+            break;
+          }
+
+          case 'mixed_improper': {
+            let whole = Math.floor(Math.random() * 5) + 1;
+            const denoms = [2, 3, 4, 5, 6, 8, 10];
+            let d = denoms[Math.floor(Math.random() * denoms.length)];
+
+            // Choose n coprime to d to guarantee fully simplified fractions
+            const coprimes = [];
+            for (let k = 1; k < d; k++) {
+              if (gcd(k, d) === 1) coprimes.push(k);
+            }
+            let n = coprimes[Math.floor(Math.random() * coprimes.length)];
+
+            let improperNum = whole * d + n;
+            p = [`${whole} ${n}/${d}`, `${improperNum}/${d}`];
+            break;
+          }
+
+          case 'integer_ops': {
+            let ops = [];
+            if (config.intAdd) ops.push('+');
+            if (config.intSub) ops.push('-');
+            if (config.intMult) ops.push('×');
+            if (config.intDiv) ops.push('÷');
+            if (ops.length === 0) ops.push('+');
+
+            let op = ops[Math.floor(Math.random() * ops.length)];
+            let a = Math.floor(Math.random() * 19) - 9;
+            let b = Math.floor(Math.random() * 19) - 9;
+            while (b === 0 && op === '÷') b = Math.floor(Math.random() * 8) + 1;
+
+            function fmtNeg(x) { return x < 0 ? `(${x})` : `${x}`; }
+
+            if (op === '+') p = [`${fmtNeg(a)} + ${fmtNeg(b)}`, fmtNeg(a + b)];
+            else if (op === '-') p = [`${fmtNeg(a)} - ${fmtNeg(b)}`, fmtNeg(a - b)];
+            else if (op === '×') p = [`${fmtNeg(a)} × ${fmtNeg(b)}`, fmtNeg(a * b)];
+            else if (op === '÷') {
+              let prod = a * b;
+              p = [`${fmtNeg(prod)} ÷ ${fmtNeg(b)}`, fmtNeg(a)];
+            }
+            break;
+          }
+
+          case 'square_roots': {
+            let mode = config.srMode;
+            if (mode === 'both') mode = Math.random() > 0.5 ? 'squares' : 'roots';
+
+            let base = Math.floor(Math.random() * 12) + 1;
+            if (mode === 'squares') p = [`${base}²`, String(base * base)];
+            else p = [`√${base * base}`, String(base)];
+            break;
+          }
+        }
 
         if (p) {
           if (Math.random() > 0.5) p = [p[1], p[0]];
@@ -1263,11 +1205,8 @@
         }
       }
 
-      // If unique combinations run out, continue generating topic-conforming pairs (allowing duplicates)
       while (pairs.length < numPairs) {
-        let p = generateSinglePair(config);
-        if (Math.random() > 0.5) p = [p[1], p[0]];
-        pairs.push(p);
+        pairs.push([`1 + ${pairs.length}`, String(1 + pairs.length)]);
       }
 
       return pairs;
@@ -1291,7 +1230,6 @@
     let topicDisplayTitle = "Times Tables";
     let pieceState = {};
     let selectedPieceId = null;
-    let draggedPieceId = null;
     let isCheckingActive = false;
     let isSolved = false;
     let startTime = null;
@@ -1389,7 +1327,6 @@
 
       trayOrder = shuffleArray(PIECES.map(p => p.id));
       selectedPieceId = null;
-      draggedPieceId = null;
       isCheckingActive = false;
       isSolved = false;
 
@@ -1397,15 +1334,13 @@
     }
 
     /**
-     * SVG Rendering Engine
+     * SVG Rendering Engine with Precise 6-Pixel Edge Alignment & Custom Color Fill
      */
     const slotsLayer = document.getElementById('slots-layer');
     const piecesLayer = document.getElementById('pieces-layer');
     const feedbackLayer = document.getElementById('feedback-layer');
     const trayContainer = document.getElementById('tray-container');
-    const workspace = document.getElementById('workspace');
     const boundaryLayer = document.getElementById('large-boundary-layer');
-    const dragPreview = document.getElementById('drag-preview');
 
     function renderOuterBoundary() {
       const topApex = getGridVertex(0, 0);
@@ -1414,7 +1349,7 @@
 
       boundaryLayer.innerHTML = `
         <polygon points="${topApex.x},${topApex.y} ${botRight.x},${botRight.y} ${botLeft.x},${botLeft.y}"
-                 fill="none" stroke="#2d3436" stroke-width="4" stroke-linejoin="round"/>
+                 fill="none" stroke="#d63031" stroke-width="4" stroke-linejoin="round"/>
       `;
     }
 
@@ -1424,7 +1359,6 @@
         const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         polygon.setAttribute("points", `${slot.v1.x},${slot.v1.y} ${slot.v2.x},${slot.v2.y} ${slot.v3.x},${slot.v3.y}`);
         polygon.setAttribute("class", "slot-outline");
-        polygon.setAttribute("data-slot-id", slot.id);
 
         polygon.addEventListener("dragover", (e) => {
           e.preventDefault();
@@ -1434,10 +1368,7 @@
         polygon.addEventListener("drop", (e) => {
           e.preventDefault();
           polygon.classList.remove("hovered");
-          const pId = e.dataTransfer.getData("text/plain") || draggedPieceId;
-          if (pId !== null && pId !== "") {
-            placePieceInSlot(parseInt(pId), slot.id);
-          }
+          if (selectedPieceId !== null) placePieceInSlot(selectedPieceId, slot.id);
         });
 
         polygon.addEventListener("click", () => {
@@ -1449,7 +1380,7 @@
     }
 
     /**
-     * Renders expression labels positioned ultra-close to outer edge with perfectly centered fraction bars
+     * Renders expression labels positioned so the lowest point of writing sits exactly 6px from the edge.
      */
     function appendSvgEdgeLabel(parentGroup, labelText, edgeIdx, scale = 1) {
       if (!labelText) return;
@@ -1459,9 +1390,10 @@
       const mMixed = clean.match(/^(\d+)\s+(\d+)\/(\d+)$/);
       const mFrac = clean.match(/^([-\d]+)\/(\d+)$/);
 
-      let D = 8.5;  // Plain text
-      if (mFrac) D = 9.2;  // Simple fraction
-      if (mMixed) D = 9.0; // Mixed number
+      // Inward offset 'D' calculated so lowest writing point is exactly 6px from outer edge
+      let D = 10.0; // Plain text: bottom at +4.0px + 6.0px gap
+      if (mFrac) D = 12.0; // Fraction: denominator bottom at +6.0px + 6.0px gap
+      if (mMixed) D = 11.5; // Mixed number: denominator bottom at +5.5px + 6.0px gap
 
       const tx = (geom.mid.x + D * geom.normal.x) * scale;
       const ty = (geom.mid.y + D * geom.normal.y) * scale;
@@ -1471,23 +1403,23 @@
 
       if (mMixed) {
         const w = mMixed[1], n = mMixed[2], d = mMixed[3];
-        const barW = Math.max(n.length, d.length) * 7.5 + 4;
-        const xOffset = 7.0;
+        const barW = Math.max(n.length, d.length) * 8 + 4;
+        const xOffset = 7.5;
 
         labelG.innerHTML = `
-          <text x="-${xOffset}" y="1.0" text-anchor="middle" font-size="12" font-weight="800" fill="#2d3436">${w}</text>
-          <text x="${xOffset}" y="-5.5" text-anchor="middle" font-size="9.5" font-weight="800" fill="#2d3436">${n}</text>
-          <line x1="${xOffset - barW / 2}" y1="-2.2" x2="${xOffset + barW / 2}" y2="-2.2" stroke="#2d3436" stroke-width="1.3"/>
-          <text x="${xOffset}" y="6.0" text-anchor="middle" font-size="9.5" font-weight="800" fill="#2d3436">${d}</text>
+          <text x="-${xOffset}" y="3" text-anchor="middle" font-size="12.5" font-weight="800" fill="#2d3436">${w}</text>
+          <text x="${xOffset}" y="-7.5" text-anchor="middle" font-size="10" font-weight="800" fill="#2d3436">${n}</text>
+          <line x1="${xOffset - barW / 2}" y1="-4.5" x2="${xOffset + barW / 2}" y2="-4.5" stroke="#2d3436" stroke-width="1.3"/>
+          <text x="${xOffset}" y="3.5" text-anchor="middle" font-size="10" font-weight="800" fill="#2d3436">${d}</text>
         `;
       } else if (mFrac) {
         const n = mFrac[1], d = mFrac[2];
-        const barW = Math.max(n.length, d.length) * 8.2 + 4;
+        const barW = Math.max(n.length, d.length) * 8.5 + 4;
 
         labelG.innerHTML = `
-          <text x="0" y="-5.5" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2d3436">${n}</text>
-          <line x1="-${barW / 2}" y1="-2.5" x2="${barW / 2}" y2="-2.5" stroke="#2d3436" stroke-width="1.3"/>
-          <text x="0" y="6.0" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2d3436">${d}</text>
+          <text x="0" y="-8.5" text-anchor="middle" font-size="11" font-weight="800" fill="#2d3436">${n}</text>
+          <line x1="-${barW / 2}" y1="-4.5" x2="${barW / 2}" y2="-4.5" stroke="#2d3436" stroke-width="1.3"/>
+          <text x="0" y="3.5" text-anchor="middle" font-size="11" font-weight="800" fill="#2d3436">${d}</text>
         `;
       } else {
         labelG.innerHTML = `
@@ -1535,22 +1467,17 @@
           g.setAttribute("transform", `translate(${slot.cx}, ${slot.cy}) scale(${scaleFactor}) rotate(${state.rotation})`);
 
           g.setAttribute("draggable", "true");
-          
           g.addEventListener("dragstart", (e) => {
-            draggedPieceId = piece.id;
             selectedPieceId = piece.id;
-            e.dataTransfer.setData("text/plain", String(piece.id));
+            e.dataTransfer.setData("text/plain", piece.id);
+            renderAll();
           });
 
-          // Clicking a placed board piece toggles selection
           g.addEventListener("click", (e) => {
             e.stopPropagation();
             selectedPieceId = (selectedPieceId === piece.id) ? null : piece.id;
             renderAll();
           });
-
-          // Pointer/Touch Dragging for placed board piece
-          attachPointerDragHandlers(g, piece.id);
 
           piecesLayer.appendChild(g);
         }
@@ -1592,11 +1519,10 @@
           card.appendChild(svg);
 
           card.setAttribute("draggable", "true");
-          
           card.addEventListener("dragstart", (e) => {
-            draggedPieceId = piece.id;
             selectedPieceId = piece.id;
-            e.dataTransfer.setData("text/plain", String(piece.id));
+            e.dataTransfer.setData("text/plain", piece.id);
+            renderAll();
           });
 
           card.addEventListener("click", () => {
@@ -1604,170 +1530,12 @@
             renderAll();
           });
 
-          // Pointer/Touch Dragging for Tray Pieces
-          attachPointerDragHandlers(card, piece.id);
-
           trayContainer.appendChild(card);
         }
       });
 
       document.getElementById("piece-count").textContent = `${trayCount} / ${PIECES.length} in Tray`;
       trayContainer.scrollTop = prevScrollTop;
-    }
-
-    /**
-     * Universal Pointer Drag System for Touch, Trackpad & Mouse
-     */
-    function attachPointerDragHandlers(element, pieceId) {
-      let isPointerDown = false;
-      let startX = 0, startY = 0;
-      let hasDragged = false;
-
-      element.addEventListener("pointerdown", (e) => {
-        if (e.button !== 0 && e.pointerType === "mouse") return;
-        isPointerDown = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        hasDragged = false;
-        draggedPieceId = pieceId;
-
-        const onPointerMove = (e) => {
-          if (!isPointerDown) return;
-          const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-          if (dist > 5 && !hasDragged) {
-            hasDragged = true;
-            selectedPieceId = pieceId;
-            startFloatingDragPreview(pieceId, e.clientX, e.clientY);
-          }
-
-          if (hasDragged) {
-            updateFloatingDragPreview(e.clientX, e.clientY);
-          }
-        };
-
-        const onPointerUp = (e) => {
-          if (!isPointerDown) return;
-          isPointerDown = false;
-
-          window.removeEventListener("pointermove", onPointerMove);
-          window.removeEventListener("pointerup", onPointerUp);
-          window.removeEventListener("pointercancel", onPointerUp);
-
-          if (hasDragged) {
-            stopFloatingDragPreview();
-            dropPieceAtPoint(pieceId, e.clientX, e.clientY);
-          }
-        };
-
-        window.addEventListener("pointermove", onPointerMove);
-        window.addEventListener("pointerup", onPointerUp);
-        window.addEventListener("pointercancel", onPointerUp);
-      });
-    }
-
-    function startFloatingDragPreview(pieceId, x, y) {
-      const piece = PIECES[pieceId];
-      const state = pieceState[pieceId];
-
-      const circumR = (2 / 3) * HEIGHT + 12;
-      const viewBoxStr = `${-circumR} ${-circumR} ${2 * circumR} ${2 * circumR}`;
-
-      dragPreview.innerHTML = '';
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("viewBox", viewBoxStr);
-      svg.setAttribute("width", "110");
-      svg.setAttribute("height", "110");
-
-      const g = createPieceSVGGroup(piece, 1);
-      g.setAttribute("transform", `rotate(${state.rotation})`);
-      svg.appendChild(g);
-
-      dragPreview.appendChild(svg);
-      dragPreview.style.display = 'block';
-      updateFloatingDragPreview(x, y);
-    }
-
-    function updateFloatingDragPreview(x, y) {
-      dragPreview.style.left = `${x}px`;
-      dragPreview.style.top = `${y}px`;
-    }
-
-    function stopFloatingDragPreview() {
-      dragPreview.style.display = 'none';
-      dragPreview.innerHTML = '';
-    }
-
-    function dropPieceAtPoint(pieceId, x, y) {
-      dragPreview.style.display = 'none';
-      const elements = document.elementsFromPoint(x, y);
-
-      if (!elements || elements.length === 0) return;
-
-      // 1. Check if dropped directly over a slot
-      let targetSlotId = null;
-      for (const el of elements) {
-        if (el.getAttribute && el.getAttribute("data-slot-id") !== null) {
-          targetSlotId = parseInt(el.getAttribute("data-slot-id"));
-          break;
-        }
-        const slotEl = el.closest ? el.closest("[data-slot-id]") : null;
-        if (slotEl) {
-          targetSlotId = parseInt(slotEl.getAttribute("data-slot-id"));
-          break;
-        }
-      }
-
-      if (targetSlotId !== null && !isNaN(targetSlotId)) {
-        placePieceInSlot(pieceId, targetSlotId);
-        return;
-      }
-
-      // 2. Check if dropped over the Piece Tray panel on the left
-      const droppedInTray = elements.some(el => 
-        el.id === "workspace" || el.id === "tray-container" || 
-        (el.closest && (el.closest("#workspace") || el.closest("#tray-container")))
-      );
-
-      if (droppedInTray) {
-        returnPieceToTray(pieceId);
-        return;
-      }
-
-      // 3. Dropped elsewhere on board
-      renderAll();
-    }
-
-    /**
-     * Drag & Drop event handlers on Tray Container & Workspace
-     */
-    function setupTrayDragListeners() {
-      const handleDragOver = (e) => {
-        e.preventDefault();
-        workspace.classList.add("drag-over");
-        trayContainer.classList.add("drag-over");
-      };
-
-      const handleDragLeave = () => {
-        workspace.classList.remove("drag-over");
-        trayContainer.classList.remove("drag-over");
-      };
-
-      const handleDrop = (e) => {
-        e.preventDefault();
-        handleDragLeave();
-        const pId = e.dataTransfer.getData("text/plain") || draggedPieceId;
-        if (pId !== null && pId !== "") {
-          returnPieceToTray(parseInt(pId));
-        }
-      };
-
-      workspace.addEventListener("dragover", handleDragOver);
-      workspace.addEventListener("dragleave", handleDragLeave);
-      workspace.addEventListener("drop", handleDrop);
-
-      trayContainer.addEventListener("dragover", handleDragOver);
-      trayContainer.addEventListener("dragleave", handleDragLeave);
-      trayContainer.addEventListener("drop", handleDrop);
     }
 
     function renderAll() {
@@ -1784,9 +1552,8 @@
     function placePieceInSlot(pieceId, slotId) {
       if (isSolved) return;
 
-      // If another piece is currently in this slot, send it back to tray
       PIECES.forEach(p => {
-        if (p.id !== pieceId && pieceState[p.id].slotId === slotId) {
+        if (pieceState[p.id].slotId === slotId) {
           pieceState[p.id].slotId = null;
         }
       });
@@ -1796,14 +1563,6 @@
       clearFeedback();
       renderAll();
       checkAutoVictory();
-    }
-
-    function returnPieceToTray(pieceId) {
-      if (isSolved) return;
-      pieceState[pieceId].slotId = null;
-      if (selectedPieceId === pieceId) selectedPieceId = null;
-      clearFeedback();
-      renderAll();
     }
 
     function rotatePiece(pieceId) {
@@ -2005,7 +1764,6 @@
       const selectedRows = parseInt(sizeSelect.value);
 
       createFreshPuzzle(selectedRows);
-      setupTrayDragListeners();
       renderAll();
 
       document.getElementById("start-screen").classList.add("hidden");
@@ -2059,9 +1817,10 @@
       a4Meta.textContent = `Topic: ${topicDisplayTitle} | Size: ${PIECES.length} Pieces`;
 
       const a4Svg = document.getElementById("a4-pieces-svg");
-      a4Svg.setAttribute("viewBox", "0 0 720 960");
+      a4Svg.setAttribute("viewBox", "0 0 720 960"); // Maximised A4 printable canvas
       a4Svg.innerHTML = '';
 
+      // Shuffled copy of pieces so touching edges do NOT match on sheet
       const printPieces = shuffleArray([...PIECES]);
       const N = printPieces.length;
 
@@ -2099,6 +1858,7 @@
         const cx = startX + (c + 1) * (bestS / 2);
         const cy = startY + r * H + (isUp ? (2 / 3) * H : (1 / 3) * H);
 
+        // Random rotation for extra scrambling
         const rot = (isUp ? 0 : 60) + Math.floor(Math.random() * 3) * 120;
 
         const g = createPieceSVGGroup(piece, geomScale, selectedPrintBgColor);
@@ -2115,6 +1875,7 @@
      * Resizer / Draggable Boundary Line Event Mechanics
      */
     const resizer = document.getElementById("resizer");
+    const workspace = document.getElementById("workspace");
     const mainContainer = document.getElementById("main-container");
     let isDraggingResizer = false;
 
