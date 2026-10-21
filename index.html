@@ -834,25 +834,33 @@
       <div class="input-group setup-only">
         <label for="topic-select">Maths Skill / Topic:</label>
         <select id="topic-select" onchange="updateTopicPanel()">
-          <option value="times_tables" selected>Times Tables</option>
-          <option value="fractions_decimals">Fractions and Decimals</option>
-          <option value="decimals_percentages">Decimals and Percentages</option>
-          <option value="equivalent_fractions">Equivalent Fractions</option>
-          <option value="add_sub">Addition and Subtraction</option>
-          <option value="mixed_improper">Mixed Numbers and Improper Fractions</option>
-          <option value="integer_ops">Integer Operations</option>
-          <option value="square_roots">Square Numbers and Square Roots</option>
-          <option value="unit_conversions">Unit Conversions (metric and time)</option>
-          <option value="powers">Powers (indices)</option>
-          <option value="like_terms">Identifying Like Terms</option>
-          <option value="expand_brackets">Expanding Single Brackets</option>
-          <option value="index_laws">Simplifying Terms Using Powers</option>
-          <option value="trig_exact">Exact Values of Trig Functions</option>
-          <option value="prefixes">Measurement Prefixes (milli, nano, kilo...)</option>
-          <option value="fraction_of">Fraction of an Amount</option>
-          <option value="percent_of">Percentage of an Amount</option>
-          <option value="clock_time">12-hour (am/pm) and 24-hour Time</option>
-          <option value="sci_notation">Scientific Notation</option>
+          <optgroup label="Years 4–6 (Phase 2)">
+            <option value="add_sub">Addition and Subtraction</option>
+            <option value="times_tables" selected>Times Tables</option>
+            <option value="clock_time">12-hour (am/pm) and 24-hour Time</option>
+            <option value="fraction_of">Fraction of an Amount</option>
+            <option value="equivalent_fractions">Equivalent Fractions</option>
+            <option value="mixed_improper">Mixed Numbers and Improper Fractions</option>
+            <option value="fractions_decimals">Fractions and Decimals</option>
+            <option value="decimals_percentages">Decimals and Percentages</option>
+            <option value="percent_of">Percentage of an Amount</option>
+            <option value="unit_conversions">Unit Conversions (metric and time)</option>
+          </optgroup>
+          <optgroup label="Years 7–8 (Phase 3)">
+            <option value="square_roots">Square Numbers and Square Roots</option>
+            <option value="powers">Powers (indices)</option>
+            <option value="integer_ops">Integer Operations</option>
+            <option value="like_terms">Identifying Like Terms</option>
+            <option value="expand_brackets">Expanding Single Brackets</option>
+          </optgroup>
+          <optgroup label="Years 9–10 (Phase 4)">
+            <option value="prefixes">Measurement Prefixes (milli, nano, kilo...)</option>
+            <option value="sci_notation">Scientific Notation</option>
+            <option value="index_laws">Simplifying Terms Using Powers</option>
+          </optgroup>
+          <optgroup label="Years 11+ (Phase 5)">
+            <option value="trig_exact">Exact Values of Trig Functions</option>
+          </optgroup>
         </select>
 
         <!-- Dynamic Sub-Options Panels -->
@@ -1852,20 +1860,26 @@
         const m = rInt(2, 9) * rSign(), p = rInt(2, 5);
         let inner, prod;
         if (Math.random() < 0.65) {
-          const q = rInt(1, 9), s = rSign();
+          let q;
+          do { q = rInt(1, 9); } while (gcd(p, q) !== 1);   // inner bracket has no common factor
+          const s = rSign();
           inner = [{ c: p, v }, { c: s * q, v: '' }];
           prod = [{ c: m * p, v }, { c: m * s * q, v: '' }];
         } else {
           let w;
           do { w = rPick(EB_VARS); } while (w === v);
-          const r = rInt(1, 4), s = rSign();
+          let r;
+          do { r = rInt(1, 4); } while (gcd(p, r) !== 1);   // inner bracket has no common factor
+          const s = rSign();
           inner = [{ c: p, v }, { c: s * r, v: w }];
           prod = [{ c: m * p, v }, { c: m * s * r, v: w }];
         }
         label = `${m}(${polyStr(inner)})`;
         ans = polyStr(prod);
       } else {
-        const k = rInt(1, 5) * rSign(), p = rInt(1, 4), q = rInt(1, 9), s = rSign();
+        const k = rInt(1, 5) * rSign(), s = rSign();
+        let p, q;
+        do { p = rInt(1, 4); q = rInt(1, 9); } while (gcd(p, q) !== 1);   // inner bracket has no common factor
         const kStr = k === 1 ? '' : (k === -1 ? '-' : String(k));
         label = `${kStr}${v}(${polyStr([{ c: p, v }, { c: s * q, v: '' }])})`;
         ans = polyStr([{ c: k * p, v: v + '^2' }, { c: k * s * q, v }]);
