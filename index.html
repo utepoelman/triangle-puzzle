@@ -15,7 +15,7 @@
       --border-color: #f1f2f6;
       --slot-bg: #ffeaa7;
       --piece-bg: #d0e6f6; /* Default pastel light blue for both screen & print */
-      --piece-border: #d63031;
+      --piece-border: #2d3436; /* Crisp black edge borders */
       --piece-selected: #fdcb6e;
       --success-color: #00b894;
       --error-color: #d63031;
@@ -166,7 +166,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       border: 4px solid var(--primary-color);
       text-align: center;
-      max-width: 500px;
+      max-width: 520px;
       width: 92%;
       margin: auto;
     }
@@ -277,6 +277,11 @@
       padding: 0.6rem;
       gap: 0.4rem;
       flex-shrink: 0;
+      transition: background-color 0.2s;
+    }
+
+    .workspace.drag-over {
+      background-color: #ffeaea;
     }
 
     .workspace-header {
@@ -310,6 +315,12 @@
       gap: 0.6rem;
       justify-content: center;
       align-content: start;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .tray-scroll.drag-over {
+      border-color: var(--primary-color);
+      background-color: #fff0f0;
     }
 
     /* Resizer / Draggable Boundary Line */
@@ -334,9 +345,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
+      cursor: grab;
       transition: transform 0.18s ease, border-color 0.18s, box-shadow 0.18s;
       box-sizing: border-box;
+      touch-action: none;
+    }
+
+    .tray-card:active {
+      cursor: grabbing;
     }
 
     .tray-card:hover {
@@ -373,10 +389,16 @@
       max-height: 800px;
     }
 
-    /* SVG Piece Mechanics */
+    /* SVG Piece Mechanics & Ultra-Sharp Typography */
     .puzzle-piece {
       cursor: grab;
       transition: transform 0.18s ease-out;
+      touch-action: none;
+    }
+
+    .puzzle-piece text {
+      font-family: 'Trebuchet MS', 'Arial', -apple-system, BlinkMacSystemFont, sans-serif;
+      text-rendering: geometricPrecision;
     }
 
     .puzzle-piece:active {
@@ -426,6 +448,18 @@
     .edge-line.incorrect {
       stroke: var(--error-color);
       filter: drop-shadow(0px 0px 4px rgba(214, 48, 49, 0.8));
+    }
+
+    /* Floating Drag Preview Element */
+    #drag-preview {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 5000;
+      transform: translate(-50%, -50%);
+      display: none;
+      filter: drop-shadow(0px 8px 18px rgba(0,0,0,0.3));
     }
 
     /* Toast Notification */
@@ -544,16 +578,115 @@
       margin-bottom: 20px;
     }
 
+
+    /* Teacher share link + link mode */
+    body.link-mode .setup-only { display: none !important; }
+
+    .link-info-box {
+      background: #fff8e1;
+      border: 2px solid #fdcb6e;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0 4px;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+    .link-info-box b { color: var(--primary-color); }
+    .link-error-box {
+      background: #ffeaea;
+      border: 2px solid var(--error-color);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin: 10px 0 4px;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+    .start-link-small {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .teacher-box {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 2px dashed var(--secondary-color);
+    }
+    .hint-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    #share-modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(45, 52, 54, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 1rem;
+    }
+    .share-card {
+      background: white;
+      border: 4px solid var(--primary-color);
+      border-radius: 16px;
+      padding: 20px 24px;
+      max-width: 640px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      text-align: left;
+    }
+    .share-card h2 { color: var(--primary-color); margin-bottom: 4px; }
+    #share-url {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 0.85rem;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      margin: 10px 0 4px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .share-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .share-warning {
+      background: #fff3cd;
+      border: 1px solid #fdcb6e;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      margin: 6px 0;
+    }
+    .share-card details { margin: 10px 0; }
+    .share-card summary { cursor: pointer; font-weight: bold; }
+    #share-key {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-top: 6px;
+      font-size: 0.88rem;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .key-row { display: flex; gap: 10px; padding: 2px 0; border-bottom: 1px solid #f1f2f6; }
+    .key-row span { flex: 1; }
+    .key-row b { color: var(--primary-color); }
+
     /* A4 Print Handout Sheet Layout */
     #a4-print-container {
       display: none;
     }
 
-    /* Print Stylesheet with 1.2cm Clear Page Margins */
+    /* Print Stylesheet */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 12mm; /* ~1.2 cm clear buffer around printer edge */
+        margin: 12mm;
       }
 
       body {
@@ -561,7 +694,28 @@
         overflow: visible !important;
       }
 
-      header, #nugget-area, .main-container, #start-screen, .cert-btn-bar, #certificate-container {
+      /* Hide screen UI controls by default */
+      header, #nugget-area, .main-container, #start-screen, #share-modal, .cert-btn-bar, #a4-print-container {
+        display: none !important;
+      }
+
+      /* Certificate print mode */
+      #certificate-container {
+        display: flex !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        padding: 0 !important;
+        background: white !important;
+      }
+
+      #certificate-view {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+
+      /* Cutout sheet print mode */
+      body.print-a4-mode #certificate-container {
         display: none !important;
       }
 
@@ -621,6 +775,9 @@
 </head>
 <body>
 
+  <!-- Floating Drag Preview -->
+  <div id="drag-preview"></div>
+
   <!-- Main Top Header -->
   <header id="main-header" class="no-print">
     <div class="title-area">
@@ -628,6 +785,7 @@
       <p id="header-subtitle">Match touching edges. Form one large triangle!</p>
     </div>
     <div class="controls">
+      <button class="btn secondary" onclick="openShareDialog('current')" title="Create a shareable link to this puzzle">🔗 Share Link</button>
       <button id="btn-print-a4" class="btn secondary" onclick="printA4CutoutSheet()" title="Print physical cutout pieces on A4 paper">🖨️ Print A4 Sheet</button>
       <button id="btn-shuffle" class="btn secondary">🔀 Scramble Tray</button>
       <button id="btn-reset" class="btn secondary">↺ Reset Board</button>
@@ -650,12 +808,20 @@
       <img src="Nugget.png" alt="Nugget" onerror="this.src='https://api.dicebear.com/7.x/thumbs/svg?seed=Nugget&backgroundColor=fab1a0'">
       <h2>Nugget's Triangle Puzzle</h2>
       
+      <div id="link-info" class="link-info-box hidden">
+        📌 <b>Your teacher's puzzle</b><br>
+        <span id="link-info-title"></span> • <span id="link-info-size"></span>
+      </div>
+      <div id="link-error" class="link-error-box hidden">
+        ⚠️ That puzzle link couldn't be read (it may have been cut short when it was copied). Ask your teacher for a new one, or set up your own puzzle below.
+      </div>
+
       <div class="input-group">
         <label for="player-name-input">Player Name:</label>
         <input type="text" id="player-name-input" placeholder="Enter your name" value="Player" maxlength="25">
       </div>
 
-      <div class="input-group">
+      <div class="input-group setup-only">
         <label for="puzzle-size-select">Puzzle Size:</label>
         <select id="puzzle-size-select">
           <option value="3">9 Pieces (3×3 - Easy)</option>
@@ -665,7 +831,7 @@
         </select>
       </div>
 
-      <div class="input-group">
+      <div class="input-group setup-only">
         <label for="topic-select">Maths Skill / Topic:</label>
         <select id="topic-select" onchange="updateTopicPanel()">
           <option value="times_tables" selected>Times Tables</option>
@@ -676,6 +842,17 @@
           <option value="mixed_improper">Mixed Numbers and Improper Fractions</option>
           <option value="integer_ops">Integer Operations</option>
           <option value="square_roots">Square Numbers and Square Roots</option>
+          <option value="unit_conversions">Unit Conversions (metric and time)</option>
+          <option value="powers">Powers (indices)</option>
+          <option value="like_terms">Identifying Like Terms</option>
+          <option value="expand_brackets">Expanding Single Brackets</option>
+          <option value="index_laws">Simplifying Terms Using Powers</option>
+          <option value="trig_exact">Exact Values of Trig Functions</option>
+          <option value="prefixes">Measurement Prefixes (milli, nano, kilo...)</option>
+          <option value="fraction_of">Fraction of an Amount</option>
+          <option value="percent_of">Percentage of an Amount</option>
+          <option value="clock_time">12-hour (am/pm) and 24-hour Time</option>
+          <option value="sci_notation">Scientific Notation</option>
         </select>
 
         <!-- Dynamic Sub-Options Panels -->
@@ -739,7 +916,7 @@
         </div>
 
         <div id="panel-integer_ops" class="sub-options-panel hidden">
-          <span style="font-size: 0.85rem; font-weight: bold;">Include Operations (Negatives in brackets):</span>
+          <span style="font-size: 0.85rem; font-weight: bold;">Include Operations (Negatives in brackets in expressions):</span>
           <div class="checkbox-grid">
             <label><input type="checkbox" id="int-add" checked> Addition (+)</label>
             <label><input type="checkbox" id="int-sub" checked> Subtraction (-)</label>
@@ -757,9 +934,178 @@
             </select>
           </label>
         </div>
+
+        <div id="panel-unit_conversions" class="sub-options-panel hidden">
+          <span style="font-size: 0.85rem; font-weight: bold;">Unit types to include:</span>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" id="uc-length" checked> Length (mm, cm, m, km)</label>
+            <label><input type="checkbox" id="uc-mass" checked> Mass (mg, g, kg, t)</label>
+            <label><input type="checkbox" id="uc-volume" checked> Volume (mL, L, m³)</label>
+            <label><input type="checkbox" id="uc-area"> Area (cm², m², ha)</label>
+            <label><input type="checkbox" id="uc-time" checked> Time (s, min, hours, days)</label>
+            <label><input type="checkbox" id="uc-decimals"> Include decimals (2.5 kg)</label>
+          </div>
+        </div>
+
+        <div id="panel-powers" class="sub-options-panel hidden">
+          <label>Bases:
+            <select id="pw-mode">
+              <option value="both" selected>Powers of 2 and other whole numbers</option>
+              <option value="twos">Powers of 2 only (2¹ to 2¹⁰)</option>
+              <option value="others">Other whole numbers only (answer under 2000)</option>
+            </select>
+          </label>
+          <div class="checkbox-grid">
+            <label style="grid-column: 1 / -1;"><input type="checkbox" id="pw-neg"> Include negative exponents (2⁻³ = 1/8)</label>
+          </div>
+        </div>
+
+        <div id="panel-like_terms" class="sub-options-panel hidden">
+          <label>Level:
+            <select id="lt-level">
+              <option value="1">Level 1: One variable (-x and 4x)</option>
+              <option value="2" selected>Level 2: With powers (3x² and -x²)</option>
+              <option value="3">Level 3: Several variables, any order (ab² and 3b²a)</option>
+            </select>
+          </label>
+          <span style="font-size: 0.85rem; color: #636e72;">Each piece edge shows a term; its partner is a like term.</span>
+        </div>
+
+        <div id="panel-expand_brackets" class="sub-options-panel hidden">
+          <label>Level:
+            <select id="eb-level">
+              <option value="1" selected>Level 1: Positive multiplier, e.g. 3(x + 4)</option>
+              <option value="2">Level 2: Negatives and coefficients, e.g. -2(3x - y)</option>
+              <option value="3">Level 3: Variable outside, e.g. 2x(3x - 1)</option>
+            </select>
+          </label>
+          <span style="font-size: 0.85rem; color: #636e72;">Tip: longer expressions fit best on the 3×3 to 5×5 grids.</span>
+        </div>
+
+        <div id="panel-index_laws" class="sub-options-panel hidden">
+          <label>Level:
+            <select id="il-level">
+              <option value="1">Level 1: Power of a power, (x³)²</option>
+              <option value="2" selected>Level 2: Two variables, (a²b³)⁴</option>
+              <option value="3">Level 3: With coefficients, (2a²b)³</option>
+              <option value="4">Level 4: Mixed, including x³ × x⁴ and x⁸ ÷ x³</option>
+            </select>
+          </label>
+          <span style="font-size: 0.85rem; color: #636e72;">Tip: longer expressions fit best on the 3×3 to 5×5 grids.</span>
+        </div>
+
+        <div id="panel-trig_exact" class="sub-options-panel hidden">
+          <label>Angles in:
+            <select id="tr-units">
+              <option value="deg" selected>Degrees (sin 30°)</option>
+              <option value="rad">Radians (sin(π/6))</option>
+              <option value="both">Both degrees and radians</option>
+            </select>
+          </label>
+          <label>Angle range:
+            <select id="tr-range">
+              <option value="q1" selected>0° to 90° (first quadrant)</option>
+              <option value="full">0° to 360° (all quadrants)</option>
+            </select>
+          </label>
+          <label>Surd style:
+            <select id="tr-surd">
+              <option value="plain" selected>1/√2 and 1/√3</option>
+              <option value="rat">Rationalised: √2/2 and √3/3</option>
+            </select>
+          </label>
+          <label>Matching:
+            <select id="tr-pair">
+              <option value="val" selected>Expression with exact value (sin 30° = 1/2)</option>
+              <option value="equiv">Also equal expressions (sin 30° = cos 60°)</option>
+            </select>
+          </label>
+          <div class="checkbox-grid">
+            <label style="grid-column: 1 / -1;"><input type="checkbox" id="tr-recip"> Include reciprocal functions (csc, sec, cot)</label>
+          </div>
+        </div>
+
+        <div id="panel-prefixes" class="sub-options-panel hidden">
+          <label>Prefixes:
+            <select id="pf-set">
+              <option value="common" selected>Common (nano, micro, milli, centi, kilo, mega, giga)</option>
+              <option value="all">All 12 (adds pico, deci, deca, hecto, tera)</option>
+            </select>
+          </label>
+          <span style="font-size: 0.85rem; font-weight: bold;">Match these forms with each other:</span>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" id="pf-name" checked> Name (milli-)</label>
+            <label><input type="checkbox" id="pf-symbol"> Symbol (m, µ, k)</label>
+            <label><input type="checkbox" id="pf-power" checked> Power of 10 (10⁻³)</label>
+            <label><input type="checkbox" id="pf-number" checked> Number (0.001)</label>
+            <label style="grid-column: 1 / -1;"><input type="checkbox" id="pf-words" checked> Words (thousandth)</label>
+          </div>
+        </div>
+
+        <div id="panel-fraction_of" class="sub-options-panel hidden">
+          <label>Level:
+            <select id="fo-level">
+              <option value="1">Level 1: Unit fractions (1/4 of 36)</option>
+              <option value="2" selected>Level 2: Other fractions (2/3 of 84)</option>
+              <option value="3">Level 3: More denominators (5/8 of 72, 4/9 of 63)</option>
+            </select>
+          </label>
+          <label>Largest amount:
+            <select id="fo-max">
+              <option value="60">Up to 60</option>
+              <option value="120" selected>Up to 120</option>
+              <option value="240">Up to 240</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="panel-percent_of" class="sub-options-panel hidden">
+          <label>Level:
+            <select id="po-level">
+              <option value="1">Level 1: Whole-number answers (40% of 35)</option>
+              <option value="2" selected>Level 2: Includes 5% steps and decimal answers</option>
+              <option value="3">Level 3: Also 1%, 12.5%, and over 100%</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="panel-clock_time" class="sub-options-panel hidden">
+          <label>Times to the nearest:
+            <select id="ct-step">
+              <option value="30">Half hour (3:30 pm)</option>
+              <option value="15" selected>Quarter hour (3:45 pm)</option>
+              <option value="5">5 minutes (3:25 pm)</option>
+              <option value="1">Minute (3:47 pm)</option>
+            </select>
+          </label>
+          <label>24-hour style:
+            <select id="ct-style">
+              <option value="colon" selected>With a colon (15:45)</option>
+              <option value="mil">Four digits (1545)</option>
+            </select>
+          </label>
+          <span style="font-size: 0.85rem; color: #636e72;">Matches am/pm times with 24-hour times (12:30 am = 00:30).</span>
+        </div>
+
+        <div id="panel-sci_notation" class="sub-options-panel hidden">
+          <label>Numbers:
+            <select id="sn-mode">
+              <option value="pos">Large numbers (4.5 × 10³ = 4500)</option>
+              <option value="neg">Small numbers (4.5 × 10⁻³ = 0.0045)</option>
+              <option value="both" selected>Large and small numbers</option>
+            </select>
+          </label>
+          <label>Digits in front:
+            <select id="sn-mant">
+              <option value="0">Whole numbers (3 × 10⁴)</option>
+              <option value="1" selected>One decimal place (3.5 × 10⁴)</option>
+              <option value="2">Two decimal places (3.25 × 10⁴)</option>
+            </select>
+          </label>
+        </div>
       </div>
 
-      <div class="input-group">
+      <div class="input-group setup-only">
         <label>Puzzle Piece Background Colour (Pastel):</label>
         <div class="color-swatches">
           <div class="swatch selected" style="background:#d0e6f6;" onclick="selectPrintColor('#d0e6f6', this)" title="Soft Blue"></div>
@@ -772,7 +1118,41 @@
         </div>
       </div>
 
-      <button class="btn" style="width:100%; justify-content:center; margin-top:10px;" onclick="startActivity()">Start Puzzle!</button>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn" style="flex:2; justify-content:center;" onclick="startActivity()">Start Puzzle!</button>
+        <button class="btn secondary setup-only" style="flex:1; justify-content:center;" onclick="openShareDialog('new')" title="Create a link to a specific puzzle for students">🔗 Share Link</button>
+      </div>
+      <div class="hint-text setup-only">Teachers: choose the size, topic and options, then click Share Link to give every student the same puzzle.</div>
+      <a href="#" class="start-link-small" id="link-leave" onclick="leaveLinkMode(event)" style="display:none;">Make my own puzzle instead</a>
+    </div>
+  </div>
+
+  <!-- Teacher: Shareable Link Dialog -->
+  <div id="share-modal" class="hidden no-print">
+    <div class="share-card">
+      <h2>👩‍🏫 Student link</h2>
+      <div id="share-summary" style="font-weight:600; color:#636e72;"></div>
+      <input type="text" id="share-url" readonly onfocus="this.select()">
+      <div style="font-size:0.78rem; color:#636e72;" id="share-length"></div>
+      <div class="share-btns">
+        <button class="btn" id="btn-copy-link" onclick="copyShareLink()">📋 Copy link</button>
+        <button class="btn secondary" onclick="tryShareLink()">▶ Try it in a new tab</button>
+        <button class="btn secondary" id="btn-regen-share" onclick="generateShare()">🎲 Make a different puzzle</button>
+      </div>
+      <div class="hint-text" style="margin-bottom:6px;">This link opens exactly this puzzle for every student. Prefer a fresh random puzzle for each student? <a href="#" onclick="copyTeacherLink(); return false;">Copy a settings-only link</a> instead.</div>
+      <div id="share-warning-file" class="share-warning hidden">
+        ⚠️ This page is open from a file on your computer, so this link will only work on your computer. Upload the HTML file (and Nugget.png) to a website or school learning platform, open it from there, and create the link again.
+      </div>
+      <div id="share-warning-long" class="share-warning hidden">
+        ⚠️ This link is quite long. Some messaging apps may cut it off. A smaller puzzle gives a shorter link.
+      </div>
+      <details>
+        <summary>Answer key (the matching pairs)</summary>
+        <div id="share-key"></div>
+      </details>
+      <div style="text-align:right;">
+        <button class="btn secondary" style="display:inline-flex;" onclick="closeShareDialog()">Close</button>
+      </div>
     </div>
   </div>
 
@@ -888,6 +1268,85 @@
 
       const activePanel = document.getElementById(`panel-${topic}`);
       if (activePanel) activePanel.classList.remove("hidden");
+    }
+
+    /**
+     * Teacher Share Link Generator & URL Parameter Loader
+     */
+    function getShareURL() {
+      const params = new URLSearchParams();
+      params.set("size", document.getElementById("puzzle-size-select").value);
+      params.set("topic", document.getElementById("topic-select").value);
+
+      params.set("ttOp", document.getElementById("tt-op").value);
+      params.set("ttRange", document.getElementById("tt-range").value);
+      params.set("fdLevel", document.getElementById("fd-level").value);
+      params.set("efLevel", document.getElementById("ef-level").value);
+      params.set("asOps", document.getElementById("as-ops").value);
+      params.set("asRange", document.getElementById("as-range").value);
+
+      params.set("intAdd", document.getElementById("int-add").checked ? "1" : "0");
+      params.set("intSub", document.getElementById("int-sub").checked ? "1" : "0");
+      params.set("intMult", document.getElementById("int-mult").checked ? "1" : "0");
+      params.set("intDiv", document.getElementById("int-div").checked ? "1" : "0");
+
+      params.set("srMode", document.getElementById("sr-mode").value);
+      NEW_SELECT_IDS.forEach(id => params.set(id, document.getElementById(id).value));
+      NEW_CHECK_IDS.forEach(id => params.set(id, document.getElementById(id).checked ? "1" : "0"));
+      params.set("color", selectedPrintBgColor.replace('#', ''));
+
+      const baseUrl = window.location.origin + window.location.pathname;
+      return `${baseUrl}?${params.toString()}`;
+    }
+
+    function copyTeacherLink() {
+      const url = getShareURL();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast("🔗 Teacher link copied! Share it with your students.");
+          setSpeech("Link copied to clipboard! Share it with your students.");
+        }).catch(() => {
+          prompt("Copy this link to share with students:", url);
+        });
+      } else {
+        prompt("Copy this link to share with students:", url);
+      }
+    }
+
+    function loadSettingsFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has("topic") && !params.has("size")) return;
+
+      if (params.has("size")) {
+        document.getElementById("puzzle-size-select").value = params.get("size");
+      }
+      if (params.has("topic")) {
+        document.getElementById("topic-select").value = params.get("topic");
+        updateTopicPanel();
+      }
+      if (params.has("ttOp")) document.getElementById("tt-op").value = params.get("ttOp");
+      if (params.has("ttRange")) document.getElementById("tt-range").value = params.get("ttRange");
+      if (params.has("fdLevel")) document.getElementById("fd-level").value = params.get("fdLevel");
+      if (params.has("efLevel")) document.getElementById("ef-level").value = params.get("efLevel");
+      if (params.has("asOps")) document.getElementById("as-ops").value = params.get("asOps");
+      if (params.has("asRange")) document.getElementById("as-range").value = params.get("asRange");
+
+      if (params.has("intAdd")) document.getElementById("int-add").checked = params.get("intAdd") === "1";
+      if (params.has("intSub")) document.getElementById("int-sub").checked = params.get("intSub") === "1";
+      if (params.has("intMult")) document.getElementById("int-mult").checked = params.get("intMult") === "1";
+      if (params.has("intDiv")) document.getElementById("int-div").checked = params.get("intDiv") === "1";
+
+      if (params.has("srMode")) document.getElementById("sr-mode").value = params.get("srMode");
+      NEW_SELECT_IDS.forEach(id => { if (params.has(id)) document.getElementById(id).value = params.get(id); });
+      NEW_CHECK_IDS.forEach(id => { if (params.has(id)) document.getElementById(id).checked = params.get(id) === "1"; });
+
+      if (params.has("color")) {
+        const hexColor = "#" + params.get("color");
+        selectPrintColor(hexColor, null);
+        document.getElementById("custom-print-color").value = hexColor;
+      }
+
+      setSpeech("Welcome! This puzzle was configured by your teacher. Type your name and click Start!");
     }
 
     /**
@@ -1042,171 +1501,658 @@
     }
 
     /**
+     * Single Pair Generator strictly conforming to the chosen topic
+     */
+    function generateSinglePair(config) {
+      switch (config.topic) {
+        case 'times_tables': {
+          let factors = [];
+          if (config.ttRange === '2_5_10') factors = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+          else if (config.ttRange === '10') factors = [0,1,2,3,4,5,6,7,8,9,10];
+          else factors = [0,1,2,3,4,5,6,7,8,9,10,11,12];
+
+          let a = factors[Math.floor(Math.random() * factors.length)];
+          let b = factors[Math.floor(Math.random() * factors.length)];
+
+          let op = config.ttOp;
+          if (op === 'mixed') op = Math.random() > 0.5 ? 'mult' : 'div';
+
+          if (op === 'div') {
+            if (a === 0) a = 1;
+            let product = a * b;
+            return [`${product} ÷ ${a}`, String(b)];
+          } else {
+            return [`${a} × ${b}`, String(a * b)];
+          }
+        }
+
+        case 'fractions_decimals': {
+          const termFracs = [
+            [1, 2, "0.5"], [1, 4, "0.25"], [3, 4, "0.75"],
+            [1, 5, "0.2"], [2, 5, "0.4"], [3, 5, "0.6"], [4, 5, "0.8"],
+            [1, 8, "0.125"], [3, 8, "0.375"], [5, 8, "0.625"], [7, 8, "0.875"],
+            [1, 10, "0.1"], [3, 10, "0.3"], [7, 10, "0.7"], [9, 10, "0.9"]
+          ];
+          const recurFracs = [
+            [1, 3, "0.333..."], [2, 3, "0.666..."],
+            [1, 6, "0.166..."], [5, 6, "0.833..."]
+          ];
+
+          let pool = [...termFracs];
+          if (config.fdLevel === '2') pool = pool.concat(recurFracs);
+          let item = pool[Math.floor(Math.random() * pool.length)];
+          return [`${item[0]}/${item[1]}`, item[2]];
+        }
+
+        case 'decimals_percentages': {
+          const decPool = [
+            [0.05, "5%"], [0.1, "10%"], [0.15, "15%"], [0.2, "20%"], [0.25, "25%"],
+            [0.3, "30%"], [0.35, "35%"], [0.4, "40%"], [0.45, "45%"], [0.5, "50%"],
+            [0.55, "55%"], [0.6, "60%"], [0.65, "65%"], [0.7, "70%"], [0.75, "75%"],
+            [0.8, "80%"], [0.85, "85%"], [0.9, "90%"], [0.95, "95%"], [1, "100%"],
+            [1.25, "125%"], [1.5, "150%"], [1.75, "175%"], [2, "200%"]
+          ];
+          let item = decPool[Math.floor(Math.random() * decPool.length)];
+          return [String(item[0]), item[1]];
+        }
+
+        case 'equivalent_fractions': {
+          const baseFracs = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5], [3,5], [4,5], [1,6], [5,6], [1,8], [3,8], [5,8], [7,8], [1,10], [3,10], [7,10], [9,10]];
+          let base = baseFracs[Math.floor(Math.random() * baseFracs.length)];
+          let n = base[0], d = base[1];
+
+          if (config.efLevel === '1') {
+            let mult = Math.floor(Math.random() * 5) + 2;
+            return [`${n}/${d}`, `${n * mult}/${d * mult}`];
+          } else {
+            let m1 = Math.floor(Math.random() * 4) + 2;
+            let m2 = Math.floor(Math.random() * 4) + 2;
+            while (m1 === m2) m2 = Math.floor(Math.random() * 4) + 2;
+            return [`${n * m1}/${d * m1}`, `${n * m2}/${d * m2}`];
+          }
+        }
+
+        case 'add_sub': {
+          let maxNum = 9, minNum = 1;
+          if (config.asRange === '2') { minNum = 10; maxNum = 99; }
+          if (config.asRange === '3') { minNum = 100; maxNum = 999; }
+
+          let isSub = (config.asOps === 'mixed') && (Math.random() > 0.5);
+
+          if (isSub) {
+            let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+            let b = Math.floor(Math.random() * (a - minNum + 1)) + minNum;
+            return [`${a} - ${b}`, String(a - b)];
+          } else {
+            let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+            let b = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+            return [`${a} + ${b}`, String(a + b)];
+          }
+        }
+
+        case 'mixed_improper': {
+          let whole = Math.floor(Math.random() * 6) + 1;
+          const denoms = [2, 3, 4, 5, 6, 8, 10, 12];
+          let d = denoms[Math.floor(Math.random() * denoms.length)];
+
+          const coprimes = [];
+          for (let k = 1; k < d; k++) {
+            if (gcd(k, d) === 1) coprimes.push(k);
+          }
+          let n = coprimes[Math.floor(Math.random() * coprimes.length)];
+
+          let improperNum = whole * d + n;
+          return [`${whole} ${n}/${d}`, `${improperNum}/${d}`];
+        }
+
+        case 'integer_ops': {
+          let ops = [];
+          if (config.intAdd) ops.push('+');
+          if (config.intSub) ops.push('-');
+          if (config.intMult) ops.push('×');
+          if (config.intDiv) ops.push('÷');
+          if (ops.length === 0) ops.push('+');
+
+          let op = ops[Math.floor(Math.random() * ops.length)];
+          let a = Math.floor(Math.random() * 19) - 9;
+          let b = Math.floor(Math.random() * 19) - 9;
+          while (b === 0 && op === '÷') b = Math.floor(Math.random() * 8) + 1;
+
+          function fmtNeg(x) { return x < 0 ? `(${x})` : `${x}`; }
+
+          if (op === '+') return [`${fmtNeg(a)} + ${fmtNeg(b)}`, String(a + b)];
+          else if (op === '-') return [`${fmtNeg(a)} - ${fmtNeg(b)}`, String(a - b)];
+          else if (op === '×') return [`${fmtNeg(a)} × ${fmtNeg(b)}`, String(a * b)];
+          else if (op === '÷') {
+            let prod = a * b;
+            return [`${fmtNeg(prod)} ÷ ${fmtNeg(b)}`, String(a)];
+          }
+          break;
+        }
+
+        case 'square_roots': {
+          let mode = config.srMode;
+          if (mode === 'both') mode = Math.random() > 0.5 ? 'squares' : 'roots';
+
+          let base = Math.floor(Math.random() * 25) + 1;
+          if (mode === 'squares') return [`${base}²`, String(base * base)];
+          else return [`√${base * base}`, String(base)];
+        }
+
+        default:
+          return genNewTopicPair(config);
+      }
+      return ["1 + 1", "2"];
+    }
+
+    /**
+     * ===== Matching registry =====
+     * Pairs from the newer topics carry a 3rd element ("match key"). Two edge
+     * labels match when their keys are equal. Older topics have no key and are
+     * compared numerically by evalExpr().
+     */
+    const MATCHKEY = new Map();
+
+    function registerMatchKeys(pairs) {
+      MATCHKEY.clear();
+      pairs.forEach(p => {
+        if (p.length > 2 && p[2] !== undefined && p[2] !== null) {
+          MATCHKEY.set(p[0], String(p[2]));
+          MATCHKEY.set(p[1], String(p[2]));
+        }
+      });
+    }
+
+    function labelsMatch(a, b) {
+      if (MATCHKEY.has(a) && MATCHKEY.has(b)) return MATCHKEY.get(a) === MATCHKEY.get(b);
+      const va = evalExpr(a), vb = evalExpr(b);
+      return va !== null && vb !== null && Math.abs(va - vb) < 1e-5;
+    }
+
+    /**
+     * ===== Rich label helpers (superscripts via ^ and safe escaping) =====
+     */
+    function escXml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // "^" followed by an (optionally negative) integer is drawn as a superscript
+    function richSvgText(text, fs) {
+      const raise = +(fs * 0.42).toFixed(2);
+      const supSize = +(fs * 0.72).toFixed(2);
+      const re = /\^(-?\d+)/g;
+      let out = '', last = 0, m, pendingReset = false;
+      while ((m = re.exec(text)) !== null) {
+        const before = text.slice(last, m.index);
+        if (before) {
+          out += `<tspan${pendingReset ? ` dy="${raise}"` : ''}>${escXml(before)}</tspan>`;
+          pendingReset = false;
+        }
+        out += `<tspan dy="${-raise}" font-size="${supSize}">${escXml(m[1])}</tspan>`;
+        pendingReset = true;
+        last = m.index + m[0].length;
+      }
+      const rest = text.slice(last);
+      if (rest) out += `<tspan${pendingReset ? ` dy="${raise}"` : ''}>${escXml(rest)}</tspan>`;
+      return out;
+    }
+
+    // Same markup as HTML (used for the teacher answer key)
+    function prettyLabelHtml(s) {
+      return escXml(s).replace(/\^(-?\d+)/g, '<sup>$1</sup>');
+    }
+
+    /**
+     * ===== Helpers for the newer topics =====
+     */
+    const NEW_TOPICS = ['unit_conversions', 'powers', 'like_terms', 'expand_brackets', 'index_laws',
+      'trig_exact', 'prefixes', 'fraction_of', 'percent_of', 'clock_time', 'sci_notation'];
+
+    // Controls of the newer topics, saved in the settings-only link
+    const NEW_SELECT_IDS = ['pw-mode', 'lt-level', 'eb-level', 'il-level', 'tr-units', 'tr-range', 'tr-surd', 'tr-pair',
+      'pf-set', 'fo-level', 'fo-max', 'po-level', 'ct-step', 'ct-style', 'sn-mode', 'sn-mant'];
+    const NEW_CHECK_IDS = ['uc-length', 'uc-mass', 'uc-volume', 'uc-area', 'uc-time', 'uc-decimals', 'pw-neg',
+      'tr-recip', 'pf-name', 'pf-symbol', 'pf-power', 'pf-number', 'pf-words'];
+
+    const rInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+    const rPick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const rSign = () => (Math.random() < 0.5 ? -1 : 1);
+    const fmtNum = x => String(parseFloat(Number(x).toFixed(6)));
+    const keyNum = x => String(Math.round(x * 1e9) / 1e9);
+
+    // 12500 -> "12 500" (non-breaking space); only for 5+ digit integer parts
+    function groupDigits(s) {
+      const m = String(s).match(/^(-?)(\d+)(\.\d+)?$/);
+      if (!m || m[2].length < 5) return String(s);
+      return m[1] + m[2].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0') + (m[3] || '');
+    }
+
+    // Monomial like -2a^3b. exps = {a:3, b:1}; order = optional variable order
+    function monoStr(coef, exps, order) {
+      const vars = order || Object.keys(exps).sort();
+      if (vars.length === 0) return String(coef);
+      const body = vars.map(v => v + (exps[v] > 1 ? '^' + exps[v] : '')).join('');
+      if (coef === 1) return body;
+      if (coef === -1) return '-' + body;
+      return coef + body;
+    }
+
+    // Polynomial from [{c, v}] where v is '' for a constant, e.g. 3x - 12
+    function polyStr(terms) {
+      let s = '';
+      terms.forEach((t, i) => {
+        const abs = Math.abs(t.c);
+        const body = (t.v === '') ? String(abs) : ((abs === 1 ? '' : String(abs)) + t.v);
+        if (i === 0) s += (t.c < 0 ? '-' : '') + body;
+        else s += (t.c < 0 ? ' - ' : ' + ') + body;
+      });
+      return s;
+    }
+
+    /* ---------- Unit conversions ---------- */
+    const UNIT_SETS = {
+      length: { units: { mm: 0.001, cm: 0.01, m: 1, km: 1000 },
+        convs: [['cm', 'mm', 10], ['m', 'cm', 100], ['m', 'mm', 1000], ['km', 'm', 1000]] },
+      mass: { units: { mg: 0.001, g: 1, kg: 1000, t: 1e6 },
+        convs: [['g', 'mg', 1000], ['kg', 'g', 1000], ['t', 'kg', 1000]] },
+      volume: { units: { mL: 0.001, L: 1, kL: 1000, 'cm³': 0.001, 'm³': 1000 },
+        convs: [['L', 'mL', 1000], ['kL', 'L', 1000], ['cm³', 'mL', 1], ['L', 'cm³', 1000], ['m³', 'L', 1000], ['m³', 'kL', 1]] },
+      area: { units: { 'mm²': 1e-6, 'cm²': 1e-4, 'm²': 1, ha: 1e4, 'km²': 1e6 },
+        convs: [['cm²', 'mm²', 100], ['m²', 'cm²', 10000], ['ha', 'm²', 10000], ['km²', 'ha', 100]] },
+      time: { units: { s: 1, min: 60, h: 3600, day: 86400, week: 604800 },
+        convs: [['min', 's', 60], ['h', 'min', 60], ['day', 'h', 24], ['week', 'day', 7], ['h', 's', 3600]] }
+    };
+
+    function unitLabel(u, v) {
+      const one = Math.abs(v - 1) < 1e-9;
+      if (u === 'h') return one ? 'hour' : 'hours';
+      if (u === 'day') return one ? 'day' : 'days';
+      if (u === 'week') return one ? 'week' : 'weeks';
+      return u;
+    }
+
+    function genUnitPair(config) {
+      const cat = rPick(config.ucCats);
+      const set = UNIT_SETS[cat];
+      const [from, to, f] = rPick(set.convs);
+      let pool = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50, 100];
+      if (config.ucDecimals) pool = pool.concat([0.5, 1.5, 2.5, 3.5, 4.5, 0.25, 0.75]);
+      const v = rPick(pool);
+      const w = v * f;
+      if (w >= 1e6) return null;
+      if (Math.abs(w * 1000 - Math.round(w * 1000)) > 1e-6) return null;
+      return [
+        `${groupDigits(fmtNum(v))} ${unitLabel(from, v)}`,
+        `${groupDigits(fmtNum(w))} ${unitLabel(to, w)}`,
+        `${cat}:${keyNum(v * set.units[from])}`
+      ];
+    }
+
+    /* ---------- Powers ---------- */
+    function buildPowerPool(config) {
+      const pool = [];
+      const bases = [];
+      if (config.pwMode !== 'others') bases.push(2);
+      if (config.pwMode !== 'twos') for (let b = 3; b <= 25; b++) bases.push(b);
+      bases.forEach(b => {
+        const startE = (b === 2 && config.pwMode === 'twos') ? 1 : 2;
+        for (let e = startE; Math.pow(b, e) < 2000; e++) {
+          pool.push([`${b}^${e}`, String(Math.pow(b, e))]);
+        }
+        if (config.pwNeg && b <= 10) {
+          for (let e = 1; Math.pow(b, e) < 2000; e++) {
+            pool.push([`${b}^-${e}`, `1/${Math.pow(b, e)}`]);
+          }
+        }
+      });
+      return pool;
+    }
+
+    function genPowerPair(config) {
+      const pool = config._cache || (config._cache = buildPowerPool(config));
+      if (!pool.length) return null;
+      const p = rPick(pool);
+      return [p[0], p[1], p[1]];
+    }
+
+    /* ---------- Like terms ---------- */
+    const LT_VARS = ['a', 'b', 'c', 'm', 'n', 'p', 'q', 'x', 'y', 'z'];
+
+    function genLikeTermPair(config) {
+      const lvl = config.ltLevel;
+      const exps = {};
+      if (lvl === '1') {
+        exps[rPick(LT_VARS)] = 1;
+      } else if (lvl === '2') {
+        exps[rPick(LT_VARS)] = rInt(1, 3);
+      } else {
+        const nv = Math.random() < 0.7 ? 2 : 3;
+        shuffleArray([...LT_VARS]).slice(0, nv).forEach(v => { exps[v] = rInt(1, 3); });
+      }
+      const cls = Object.keys(exps).sort().map(v => v + '^' + exps[v]).join('');
+      const c1 = rSign() * rInt(1, 9);
+      let c2;
+      do { c2 = rSign() * rInt(1, 9); } while (c2 === c1);
+      const order = () => (lvl === '3' ? shuffleArray(Object.keys(exps)) : undefined);
+      return [monoStr(c1, exps, order()), monoStr(c2, exps, order()), cls];
+    }
+
+    /* ---------- Expanding brackets ---------- */
+    const EB_VARS = ['x', 'y', 'a', 'b', 'm', 'n', 'p', 't'];
+
+    function genExpandPair(config) {
+      const lvl = config.ebLevel;
+      const v = rPick(EB_VARS);
+      let label, ans;
+      if (lvl === '1') {
+        const m = rInt(2, 9), q = rInt(1, 9), s = rSign();
+        label = `${m}(${polyStr([{ c: 1, v }, { c: s * q, v: '' }])})`;
+        ans = polyStr([{ c: m, v }, { c: m * s * q, v: '' }]);
+      } else if (lvl === '2') {
+        const m = rInt(2, 9) * rSign(), p = rInt(2, 5);
+        let inner, prod;
+        if (Math.random() < 0.65) {
+          const q = rInt(1, 9), s = rSign();
+          inner = [{ c: p, v }, { c: s * q, v: '' }];
+          prod = [{ c: m * p, v }, { c: m * s * q, v: '' }];
+        } else {
+          let w;
+          do { w = rPick(EB_VARS); } while (w === v);
+          const r = rInt(1, 4), s = rSign();
+          inner = [{ c: p, v }, { c: s * r, v: w }];
+          prod = [{ c: m * p, v }, { c: m * s * r, v: w }];
+        }
+        label = `${m}(${polyStr(inner)})`;
+        ans = polyStr(prod);
+      } else {
+        const k = rInt(1, 5) * rSign(), p = rInt(1, 4), q = rInt(1, 9), s = rSign();
+        const kStr = k === 1 ? '' : (k === -1 ? '-' : String(k));
+        label = `${kStr}${v}(${polyStr([{ c: p, v }, { c: s * q, v: '' }])})`;
+        ans = polyStr([{ c: k * p, v: v + '^2' }, { c: k * s * q, v }]);
+      }
+      return [label, ans, ans];
+    }
+
+    /* ---------- Index laws / simplifying powers ---------- */
+    const IL_VARS = ['a', 'b', 'c', 'm', 'n', 'p', 'q', 'x', 'y', 'z'];
+
+    function genIndexPair(config) {
+      const twoVars = () => shuffleArray([...IL_VARS]).slice(0, 2).sort();
+
+      const lvl1 = () => {
+        const v = rPick(IL_VARS);
+        let e, o;
+        do { e = rInt(2, 6); o = rInt(2, 5); } while (e * o > 20);
+        return [`(${v}^${e})^${o}`, `${v}^${e * o}`];
+      };
+      const lvl2 = () => {
+        const [v1, v2] = twoVars();
+        let e1, e2, o;
+        do {
+          e1 = rInt(1, 4); e2 = rInt(1, 4); o = rInt(2, 5);
+        } while ((e1 === 1 && e2 === 1) || e1 * o > 15 || e2 * o > 15);
+        return [`(${monoStr(1, { [v1]: e1, [v2]: e2 })})^${o}`, monoStr(1, { [v1]: e1 * o, [v2]: e2 * o })];
+      };
+      const lvl3 = () => {
+        const oneVar = Math.random() < 0.4;
+        const vars = oneVar ? [rPick(IL_VARS)] : twoVars();
+        let c, o, exps, newExps;
+        do {
+          c = rPick([2, 3, 4, 5, -2, -3]);
+          o = rInt(2, 4);
+          exps = {};
+          vars.forEach(v => { exps[v] = rInt(1, 3); });
+        } while (Math.abs(Math.pow(c, o)) > 500);
+        newExps = {};
+        vars.forEach(v => { newExps[v] = exps[v] * o; });
+        return [`(${monoStr(c, exps)})^${o}`, monoStr(Math.pow(c, o), newExps)];
+      };
+      const product = () => {
+        const v = rPick(IL_VARS);
+        const c1 = rPick([1, 2, 3, 4, 5]), c2 = rPick([1, 2, 3, 4, 5]);
+        const e1 = rInt(1, 6), e2 = rInt(1, 6);
+        return [`${monoStr(c1, { [v]: e1 })} × ${monoStr(c2, { [v]: e2 })}`, monoStr(c1 * c2, { [v]: e1 + e2 })];
+      };
+      const quotient = () => {
+        const v = rPick(IL_VARS);
+        const r = rPick([1, 2, 3, 4, 5, 6]), d = rPick([1, 2, 3, 4]);
+        const er = rInt(1, 6), ed = rInt(1, 5);
+        return [`${monoStr(r * d, { [v]: er + ed })} ÷ ${monoStr(d, { [v]: ed })}`, monoStr(r, { [v]: er })];
+      };
+
+      let res;
+      switch (config.ilLevel) {
+        case '1': res = lvl1(); break;
+        case '2': res = lvl2(); break;
+        case '3': res = lvl3(); break;
+        default: res = rPick([lvl1, lvl2, lvl3, product, product, quotient, quotient])();
+      }
+      return [res[0], res[1], res[1]];
+    }
+
+    /* ---------- Exact trig values ---------- */
+    const TRIG_EXACT = [
+      [0, '0', '0'], [1, '1', '1'], [-1, '-1', '-1'], [2, '2', '2'], [-2, '-2', '-2'],
+      [0.5, '1/2', '1/2'], [-0.5, '-1/2', '-1/2'],
+      [Math.sqrt(3) / 2, '√3/2', '√3/2'], [-Math.sqrt(3) / 2, '-√3/2', '-√3/2'],
+      [Math.SQRT1_2, '1/√2', '√2/2'], [-Math.SQRT1_2, '-1/√2', '-√2/2'],
+      [1 / Math.sqrt(3), '1/√3', '√3/3'], [-1 / Math.sqrt(3), '-1/√3', '-√3/3'],
+      [Math.sqrt(3), '√3', '√3'], [-Math.sqrt(3), '-√3', '-√3'],
+      [Math.SQRT2, '√2', '√2'], [-Math.SQRT2, '-√2', '-√2'],
+      [2 / Math.sqrt(3), '2/√3', '2√3/3'], [-2 / Math.sqrt(3), '-2/√3', '-2√3/3']
+    ];
+
+    function trigExactStr(v, rationalise) {
+      if (!isFinite(v)) return null;
+      const k = Math.round(v * 1e6);
+      for (const e of TRIG_EXACT) {
+        if (Math.round(e[0] * 1e6) === k) return rationalise ? e[2] : e[1];
+      }
+      return null;
+    }
+
+    function radLabel(deg) {
+      if (deg === 0) return '0';
+      const g = gcd(deg, 180);
+      const n = deg / g, d = 180 / g;
+      if (d === 1) return n === 1 ? 'π' : `${n}π`;
+      return `${n === 1 ? '' : n}π/${d}`;
+    }
+
+    function buildTrigPool(config) {
+      const degs = config.trRange === 'full'
+        ? [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360]
+        : [0, 30, 45, 60, 90];
+      const fns = ['sin', 'cos', 'tan'].concat(config.trRecip ? ['csc', 'sec', 'cot'] : []);
+      const items = [];
+      const classes = {};
+      degs.forEach(deg => {
+        const r = deg * Math.PI / 180;
+        const s = Math.sin(r), c = Math.cos(r);
+        fns.forEach(fn => {
+          let v;
+          if (fn === 'sin') v = s;
+          else if (fn === 'cos') v = c;
+          else if (fn === 'tan') { if (Math.abs(c) < 1e-9) return; v = s / c; }
+          else if (fn === 'csc') { if (Math.abs(s) < 1e-9) return; v = 1 / s; }
+          else if (fn === 'sec') { if (Math.abs(c) < 1e-9) return; v = 1 / c; }
+          else { if (Math.abs(s) < 1e-9) return; v = c / s; }
+          const val = trigExactStr(v, config.trRat);
+          if (val === null) return;
+          const labels = [];
+          if (config.trDeg) labels.push(`${fn} ${deg}°`);
+          if (config.trRad) labels.push(`${fn}(${radLabel(deg)})`);
+          labels.forEach(l => {
+            items.push({ label: l, val });
+            (classes[val] = classes[val] || new Set([val])).add(l);
+          });
+        });
+      });
+      return { items, classes };
+    }
+
+    function genTrigPair(config) {
+      const pool = config._cache || (config._cache = buildTrigPool(config));
+      if (!pool.items.length) return null;
+      const it = rPick(pool.items);
+      if (config.trPair === 'equiv') {
+        const others = [...pool.classes[it.val]].filter(l => l !== it.label);
+        if (others.length) return [it.label, rPick(others), it.val];
+      }
+      return [it.label, it.val, it.val];
+    }
+
+    /* ---------- Measurement prefixes ---------- */
+    const PREFIX_DATA = [
+      { id: 'pico',  sym: 'p',  exp: -12, words: 'trillionth', num: null,       common: false },
+      { id: 'nano',  sym: 'n',  exp: -9,  words: 'billionth',  num: null,       common: true },
+      { id: 'micro', sym: 'µ',  exp: -6,  words: 'millionth',  num: '0.000001', common: true },
+      { id: 'milli', sym: 'm',  exp: -3,  words: 'thousandth', num: '0.001',    common: true },
+      { id: 'centi', sym: 'c',  exp: -2,  words: 'hundredth',  num: '0.01',     common: true },
+      { id: 'deci',  sym: 'd',  exp: -1,  words: 'tenth',      num: '0.1',      common: false },
+      { id: 'deca',  sym: 'da', exp: 1,   words: 'ten',        num: '10',       common: false },
+      { id: 'hecto', sym: 'h',  exp: 2,   words: 'hundred',    num: '100',      common: false },
+      { id: 'kilo',  sym: 'k',  exp: 3,   words: 'thousand',   num: '1000',     common: true },
+      { id: 'mega',  sym: 'M',  exp: 6,   words: 'million',    num: '1000000',  common: true },
+      { id: 'giga',  sym: 'G',  exp: 9,   words: 'billion',    num: null,       common: true },
+      { id: 'tera',  sym: 'T',  exp: 12,  words: 'trillion',   num: null,       common: false }
+    ];
+
+    function genPrefixPair(config) {
+      const list = config.pfSet === 'all' ? PREFIX_DATA : PREFIX_DATA.filter(p => p.common);
+      const p = rPick(list);
+      const f = config.pfForms;
+      const forms = [];
+      if (f.name) forms.push(`${p.id}-`);
+      if (f.symbol) forms.push(p.sym);
+      if (f.power) forms.push(`10^${p.exp}`);
+      if (f.number && p.num) forms.push(groupDigits(p.num));
+      if (f.words) forms.push(p.words);
+      if (forms.length < 2) return null;
+      const two = shuffleArray(forms).slice(0, 2);
+      return [two[0], two[1], p.id];
+    }
+
+    /* ---------- Fraction of an amount ---------- */
+    function genFractionOfPair(config) {
+      const lvl = config.foLevel;
+      const dens = lvl === '3' ? [2, 3, 4, 5, 6, 7, 8, 9, 10, 12] : [2, 3, 4, 5, 10];
+      const d = rPick(dens);
+      const n = lvl === '1' ? 1 : rInt(1, d - 1);
+      if (n > 1 && gcd(n, d) !== 1) return null;
+      const kMax = Math.floor(config.foMax / d);
+      if (kMax < 2) return null;
+      const k = rInt(2, kMax);
+      const ans = String(n * k);
+      return [`${n}/${d} of ${d * k}`, ans, ans];
+    }
+
+    /* ---------- Percentage of an amount ---------- */
+    function genPercentPair(config) {
+      const lvl = config.poLevel;
+      const L1 = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90];
+      const L2 = L1.concat([5, 15, 35, 45, 55, 65, 85, 95]);
+      const L3 = L2.concat([1, 2, 12.5, 110, 120, 125, 150, 200]);
+      const p = rPick(lvl === '1' ? L1 : (lvl === '2' ? L2 : L3));
+      const amount = rInt(2, lvl === '3' ? 50 : 40) * 5;
+      const r = p * amount / 100;
+      const f = Math.pow(10, lvl === '1' ? 0 : (lvl === '2' ? 2 : 3));
+      if (Math.abs(r * f - Math.round(r * f)) > 1e-9) return null;
+      const ans = fmtNum(r);
+      return [`${p}% of ${amount}`, ans, ans];
+    }
+
+    /* ---------- 12-hour and 24-hour clock ---------- */
+    function genClockPair(config) {
+      const step = config.ctStep;
+      const t = rInt(0, Math.floor(1440 / step) - 1) * step;
+      const h = Math.floor(t / 60), m = t % 60;
+      const pad = x => String(x).padStart(2, '0');
+      const h12 = h % 12 || 12;
+      const l12 = `${h12}:${pad(m)} ${h >= 12 ? 'pm' : 'am'}`;
+      const l24 = config.ctStyle === 'mil' ? `${pad(h)}${pad(m)}` : `${pad(h)}:${pad(m)}`;
+      return [l12, l24, String(t)];
+    }
+
+    /* ---------- Scientific notation ---------- */
+    function sciToPlain(mant, e) {
+      const [i, f = ''] = mant.split('.');
+      const digits = i + f;
+      const pointPos = i.length + e;
+      if (pointPos <= 0) return '0.' + '0'.repeat(-pointPos) + digits;
+      if (pointPos >= digits.length) return digits + '0'.repeat(pointPos - digits.length);
+      return digits.slice(0, pointPos) + '.' + digits.slice(pointPos);
+    }
+
+    function genSciPair(config) {
+      let mant = String(rInt(1, 9));
+      if (config.snMant === 1) mant += '.' + rInt(1, 9);
+      else if (config.snMant === 2) mant += '.' + rInt(0, 9) + rInt(1, 9);
+      let e = rInt(2, 7);
+      if (config.snMode === 'neg') e = -e;
+      else if (config.snMode === 'both' && Math.random() < 0.5) e = -e;
+      const plain = sciToPlain(mant, e);
+      return [`${mant} × 10^${e}`, groupDigits(plain), plain];
+    }
+
+    function genNewTopicPair(config) {
+      switch (config.topic) {
+        case 'unit_conversions': return genUnitPair(config);
+        case 'powers': return genPowerPair(config);
+        case 'like_terms': return genLikeTermPair(config);
+        case 'expand_brackets': return genExpandPair(config);
+        case 'index_laws': return genIndexPair(config);
+        case 'trig_exact': return genTrigPair(config);
+        case 'prefixes': return genPrefixPair(config);
+        case 'fraction_of': return genFractionOfPair(config);
+        case 'percent_of': return genPercentPair(config);
+        case 'clock_time': return genClockPair(config);
+        case 'sci_notation': return genSciPair(config);
+      }
+      return null;
+    }
+
+    /**
      * Multi-Topic Pair Generator Engine
      */
     function generateFreshPairs(numPairs, config) {
       const pairs = [];
       const usedKeys = new Set();
+      const usedClasses = new Set();
       let attempts = 0;
+
+      const orient = (p) => {
+        const cls = p[2];
+        const q = (Math.random() > 0.5) ? [p[1], p[0]] : [p[0], p[1]];
+        if (cls !== undefined) q.push(cls);
+        return q;
+      };
 
       while (pairs.length < numPairs && attempts < 3000) {
         attempts++;
-        let p = null;
-
-        switch (config.topic) {
-          case 'times_tables': {
-            let factors = [];
-            if (config.ttRange === '2_5_10') factors = [2, 5, 10];
-            else if (config.ttRange === '10') factors = [0,1,2,3,4,5,6,7,8,9,10];
-            else factors = [0,1,2,3,4,5,6,7,8,9,10,11,12];
-
-            let a = factors[Math.floor(Math.random() * factors.length)];
-            let b = factors[Math.floor(Math.random() * factors.length)];
-
-            let op = config.ttOp;
-            if (op === 'mixed') op = Math.random() > 0.5 ? 'mult' : 'div';
-
-            if (op === 'div') {
-              if (a === 0) a = 1;
-              let product = a * b;
-              p = [`${product} ÷ ${a}`, String(b)];
-            } else {
-              p = [`${a} × ${b}`, String(a * b)];
-            }
-            break;
-          }
-
-          case 'fractions_decimals': {
-            const termFracs = [
-              [1, 2, "0.5"], [1, 4, "0.25"], [3, 4, "0.75"],
-              [1, 5, "0.2"], [2, 5, "0.4"], [3, 5, "0.6"], [4, 5, "0.8"],
-              [1, 8, "0.125"], [3, 8, "0.375"], [5, 8, "0.625"], [7, 8, "0.875"],
-              [1, 10, "0.1"], [3, 10, "0.3"], [7, 10, "0.7"], [9, 10, "0.9"]
-            ];
-            const recurFracs = [
-              [1, 3, "0.333..."], [2, 3, "0.666..."],
-              [1, 6, "0.166..."], [5, 6, "0.833..."]
-            ];
-
-            let pool = [...termFracs];
-            if (config.fdLevel === '2') pool = pool.concat(recurFracs);
-            let item = pool[Math.floor(Math.random() * pool.length)];
-            p = [`${item[0]}/${item[1]}`, item[2]];
-            break;
-          }
-
-          case 'decimals_percentages': {
-            const decPool = [
-              [0.05, "5%"], [0.1, "10%"], [0.15, "15%"], [0.2, "20%"], [0.25, "25%"],
-              [0.3, "30%"], [0.4, "40%"], [0.5, "50%"], [0.6, "60%"], [0.75, "75%"],
-              [0.8, "80%"], [0.9, "90%"], [1, "100%"], [1.25, "125%"], [1.5, "150%"]
-            ];
-            let item = decPool[Math.floor(Math.random() * decPool.length)];
-            p = [String(item[0]), item[1]];
-            break;
-          }
-
-          case 'equivalent_fractions': {
-            const baseFracs = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5], [3,5], [4,5], [1,6], [5,6]];
-            let base = baseFracs[Math.floor(Math.random() * baseFracs.length)];
-            let n = base[0], d = base[1];
-
-            if (config.efLevel === '1') {
-              let mult = Math.floor(Math.random() * 4) + 2;
-              p = [`${n}/${d}`, `${n * mult}/${d * mult}`];
-            } else {
-              let m1 = Math.floor(Math.random() * 3) + 2;
-              let m2 = Math.floor(Math.random() * 3) + 2;
-              while (m1 === m2) m2 = Math.floor(Math.random() * 3) + 2;
-              p = [`${n * m1}/${d * m1}`, `${n * m2}/${d * m2}`];
-            }
-            break;
-          }
-
-          case 'add_sub': {
-            let maxNum = 9, minNum = 1;
-            if (config.asRange === '2') { minNum = 10; maxNum = 99; }
-            if (config.asRange === '3') { minNum = 100; maxNum = 999; }
-
-            let isSub = (config.asOps === 'mixed') && (Math.random() > 0.5);
-
-            if (isSub) {
-              let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-              let b = Math.floor(Math.random() * (a - minNum + 1)) + minNum;
-              p = [`${a} - ${b}`, String(a - b)];
-            } else {
-              let a = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-              let b = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
-              p = [`${a} + ${b}`, String(a + b)];
-            }
-            break;
-          }
-
-          case 'mixed_improper': {
-            let whole = Math.floor(Math.random() * 5) + 1;
-            const denoms = [2, 3, 4, 5, 6, 8, 10];
-            let d = denoms[Math.floor(Math.random() * denoms.length)];
-
-            // Choose n coprime to d to guarantee fully simplified fractions
-            const coprimes = [];
-            for (let k = 1; k < d; k++) {
-              if (gcd(k, d) === 1) coprimes.push(k);
-            }
-            let n = coprimes[Math.floor(Math.random() * coprimes.length)];
-
-            let improperNum = whole * d + n;
-            p = [`${whole} ${n}/${d}`, `${improperNum}/${d}`];
-            break;
-          }
-
-          case 'integer_ops': {
-            let ops = [];
-            if (config.intAdd) ops.push('+');
-            if (config.intSub) ops.push('-');
-            if (config.intMult) ops.push('×');
-            if (config.intDiv) ops.push('÷');
-            if (ops.length === 0) ops.push('+');
-
-            let op = ops[Math.floor(Math.random() * ops.length)];
-            let a = Math.floor(Math.random() * 19) - 9;
-            let b = Math.floor(Math.random() * 19) - 9;
-            while (b === 0 && op === '÷') b = Math.floor(Math.random() * 8) + 1;
-
-            function fmtNeg(x) { return x < 0 ? `(${x})` : `${x}`; }
-
-            if (op === '+') p = [`${fmtNeg(a)} + ${fmtNeg(b)}`, fmtNeg(a + b)];
-            else if (op === '-') p = [`${fmtNeg(a)} - ${fmtNeg(b)}`, fmtNeg(a - b)];
-            else if (op === '×') p = [`${fmtNeg(a)} × ${fmtNeg(b)}`, fmtNeg(a * b)];
-            else if (op === '÷') {
-              let prod = a * b;
-              p = [`${fmtNeg(prod)} ÷ ${fmtNeg(b)}`, fmtNeg(a)];
-            }
-            break;
-          }
-
-          case 'square_roots': {
-            let mode = config.srMode;
-            if (mode === 'both') mode = Math.random() > 0.5 ? 'squares' : 'roots';
-
-            let base = Math.floor(Math.random() * 12) + 1;
-            if (mode === 'squares') p = [`${base}²`, String(base * base)];
-            else p = [`√${base * base}`, String(base)];
-            break;
-          }
-        }
+        let p = generateSinglePair(config);
 
         if (p) {
-          if (Math.random() > 0.5) p = [p[1], p[0]];
-          let key = `${p[0]}::${p[1]}`;
-          if (!usedKeys.has(key)) {
+          const cls = p[2];
+          p = orient(p);
+          const key = `${p[0]}::${p[1]}`;
+          // Prefer a different "match class" for each pair; allow repeats only if the pool runs dry
+          const classTaken = cls !== undefined && usedClasses.has(cls);
+          if (!usedKeys.has(key) && !(classTaken && attempts < 1200)) {
             usedKeys.add(key);
+            if (cls !== undefined) usedClasses.add(cls);
             pairs.push(p);
           }
         }
       }
 
+      // Small pools: reuse pairs so every edge still has a partner
       while (pairs.length < numPairs) {
-        pairs.push([`1 + ${pairs.length}`, String(1 + pairs.length)]);
+        let p = null;
+        for (let t = 0; t < 200 && !p; t++) p = generateSinglePair(config);
+        if (!p && pairs.length > 0) p = pairs[Math.floor(Math.random() * pairs.length)];
+        if (!p) p = ["1 + 1", "2"];
+        pairs.push(orient(p));
       }
 
       return pairs;
@@ -1230,6 +2176,7 @@
     let topicDisplayTitle = "Times Tables";
     let pieceState = {};
     let selectedPieceId = null;
+    let draggedPieceId = null;
     let isCheckingActive = false;
     let isSolved = false;
     let startTime = null;
@@ -1285,19 +2232,95 @@
         config.srMode = document.getElementById("sr-mode").value;
         const modeText = config.srMode === 'squares' ? 'Squares Only' : (config.srMode === 'roots' ? 'Roots Only' : 'Squares & Roots');
         topicDisplayTitle = `Square Numbers & Roots (${modeText})`;
+      } else if (topic === 'unit_conversions') {
+        const names = { length: 'Length', mass: 'Mass', volume: 'Volume', area: 'Area', time: 'Time' };
+        config.ucCats = Object.keys(names).filter(k => document.getElementById('uc-' + k).checked);
+        if (!config.ucCats.length) config.ucCats = ['length'];
+        config.ucDecimals = document.getElementById('uc-decimals').checked;
+        topicDisplayTitle = `Unit Conversions (${config.ucCats.map(k => names[k]).join(', ')})`;
+
+      } else if (topic === 'powers') {
+        config.pwMode = document.getElementById('pw-mode').value;
+        config.pwNeg = document.getElementById('pw-neg').checked;
+        const modeText = config.pwMode === 'twos' ? 'Powers of 2' : (config.pwMode === 'others' ? 'Other Bases' : 'Powers of 2 & Other Bases');
+        topicDisplayTitle = `Powers (${modeText}${config.pwNeg ? ', negative exponents' : ''})`;
+
+      } else if (topic === 'like_terms') {
+        config.ltLevel = document.getElementById('lt-level').value;
+        topicDisplayTitle = `Identifying Like Terms (Level ${config.ltLevel})`;
+
+      } else if (topic === 'expand_brackets') {
+        config.ebLevel = document.getElementById('eb-level').value;
+        topicDisplayTitle = `Expanding Brackets (Level ${config.ebLevel})`;
+
+      } else if (topic === 'index_laws') {
+        config.ilLevel = document.getElementById('il-level').value;
+        topicDisplayTitle = `Simplifying Powers (Level ${config.ilLevel})`;
+
+      } else if (topic === 'trig_exact') {
+        const units = document.getElementById('tr-units').value;
+        config.trDeg = (units === 'deg' || units === 'both');
+        config.trRad = (units === 'rad' || units === 'both');
+        config.trRange = document.getElementById('tr-range').value;
+        config.trRat = document.getElementById('tr-surd').value === 'rat';
+        config.trPair = document.getElementById('tr-pair').value;
+        config.trRecip = document.getElementById('tr-recip').checked;
+        const unitText = units === 'deg' ? 'degrees' : (units === 'rad' ? 'radians' : 'degrees & radians');
+        topicDisplayTitle = `Exact Trig Values (${unitText}${config.trRecip ? ', with reciprocals' : ''})`;
+
+      } else if (topic === 'prefixes') {
+        config.pfSet = document.getElementById('pf-set').value;
+        config.pfForms = {
+          name: document.getElementById('pf-name').checked,
+          symbol: document.getElementById('pf-symbol').checked,
+          power: document.getElementById('pf-power').checked,
+          number: document.getElementById('pf-number').checked,
+          words: document.getElementById('pf-words').checked
+        };
+        if (Object.values(config.pfForms).filter(Boolean).length < 2) {
+          config.pfForms.name = true;
+          config.pfForms.power = true;
+        }
+        topicDisplayTitle = `Measurement Prefixes (${config.pfSet === 'all' ? 'all 12' : 'common'})`;
+
+      } else if (topic === 'fraction_of') {
+        config.foLevel = document.getElementById('fo-level').value;
+        config.foMax = parseInt(document.getElementById('fo-max').value);
+        topicDisplayTitle = `Fraction of an Amount (Level ${config.foLevel})`;
+
+      } else if (topic === 'percent_of') {
+        config.poLevel = document.getElementById('po-level').value;
+        topicDisplayTitle = `Percentage of an Amount (Level ${config.poLevel})`;
+
+      } else if (topic === 'clock_time') {
+        config.ctStep = parseInt(document.getElementById('ct-step').value);
+        config.ctStyle = document.getElementById('ct-style').value;
+        topicDisplayTitle = `12-hour & 24-hour Time`;
+
+      } else if (topic === 'sci_notation') {
+        config.snMode = document.getElementById('sn-mode').value;
+        config.snMant = parseInt(document.getElementById('sn-mant').value);
+        const modeText = config.snMode === 'pos' ? 'large' : (config.snMode === 'neg' ? 'small' : 'large & small');
+        topicDisplayTitle = `Scientific Notation (${modeText} numbers)`;
       }
 
       return config;
     }
 
-    function createFreshPuzzle(rows) {
+    function createFreshPuzzle(rows, presetPairs) {
       buildGridGeometry(rows);
       clearFeedback();
 
-      activeTopicConfig = readTopicConfigFromUI();
-
-      const numInteriorEdges = INTERIOR_EDGES.length;
-      const freshPairs = generateFreshPairs(numInteriorEdges, activeTopicConfig);
+      let freshPairs;
+      if (presetPairs) {
+        activeTopicConfig = { topic: 'shared' };
+        freshPairs = presetPairs.map(p => p.slice());
+      } else {
+        activeTopicConfig = readTopicConfigFromUI();
+        freshPairs = generateFreshPairs(INTERIOR_EDGES.length, activeTopicConfig);
+      }
+      registerMatchKeys(freshPairs);
+      currentPuzzleSpec = { v: 1, r: rows, t: topicDisplayTitle, c: selectedPrintBgColor, p: freshPairs.map(p => p.slice()) };
       const slotCanonicalEdges = Array.from({ length: SLOTS.length }, () => ["", "", ""]);
 
       INTERIOR_EDGES.forEach((ie, idx) => {
@@ -1327,6 +2350,7 @@
 
       trayOrder = shuffleArray(PIECES.map(p => p.id));
       selectedPieceId = null;
+      draggedPieceId = null;
       isCheckingActive = false;
       isSolved = false;
 
@@ -1334,13 +2358,15 @@
     }
 
     /**
-     * SVG Rendering Engine with Precise 6-Pixel Edge Alignment & Custom Color Fill
+     * SVG Rendering Engine
      */
     const slotsLayer = document.getElementById('slots-layer');
     const piecesLayer = document.getElementById('pieces-layer');
     const feedbackLayer = document.getElementById('feedback-layer');
     const trayContainer = document.getElementById('tray-container');
+    const workspace = document.getElementById('workspace');
     const boundaryLayer = document.getElementById('large-boundary-layer');
+    const dragPreview = document.getElementById('drag-preview');
 
     function renderOuterBoundary() {
       const topApex = getGridVertex(0, 0);
@@ -1349,7 +2375,7 @@
 
       boundaryLayer.innerHTML = `
         <polygon points="${topApex.x},${topApex.y} ${botRight.x},${botRight.y} ${botLeft.x},${botLeft.y}"
-                 fill="none" stroke="#d63031" stroke-width="4" stroke-linejoin="round"/>
+                 fill="none" stroke="#2d3436" stroke-width="4" stroke-linejoin="round"/>
       `;
     }
 
@@ -1359,6 +2385,7 @@
         const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         polygon.setAttribute("points", `${slot.v1.x},${slot.v1.y} ${slot.v2.x},${slot.v2.y} ${slot.v3.x},${slot.v3.y}`);
         polygon.setAttribute("class", "slot-outline");
+        polygon.setAttribute("data-slot-id", slot.id);
 
         polygon.addEventListener("dragover", (e) => {
           e.preventDefault();
@@ -1368,7 +2395,10 @@
         polygon.addEventListener("drop", (e) => {
           e.preventDefault();
           polygon.classList.remove("hovered");
-          if (selectedPieceId !== null) placePieceInSlot(selectedPieceId, slot.id);
+          const pId = e.dataTransfer.getData("text/plain") || draggedPieceId;
+          if (pId !== null && pId !== "") {
+            placePieceInSlot(parseInt(pId), slot.id);
+          }
         });
 
         polygon.addEventListener("click", () => {
@@ -1380,7 +2410,7 @@
     }
 
     /**
-     * Renders expression labels positioned so the lowest point of writing sits exactly 6px from the edge.
+     * Renders expression labels positioned ultra-close to outer edge with perfectly centered fraction bars
      */
     function appendSvgEdgeLabel(parentGroup, labelText, edgeIdx, scale = 1) {
       if (!labelText) return;
@@ -1388,12 +2418,11 @@
       const geom = EDGES_GEOM[edgeIdx];
 
       const mMixed = clean.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-      const mFrac = clean.match(/^([-\d]+)\/(\d+)$/);
+      const mFrac = clean.match(/^(-?[\d√]+)\/([\d√]+)$/);
 
-      // Inward offset 'D' calculated so lowest writing point is exactly 6px from outer edge
-      let D = 10.0; // Plain text: bottom at +4.0px + 6.0px gap
-      if (mFrac) D = 12.0; // Fraction: denominator bottom at +6.0px + 6.0px gap
-      if (mMixed) D = 11.5; // Mixed number: denominator bottom at +5.5px + 6.0px gap
+      let D = 8.5;  // Plain text
+      if (mFrac) D = 9.2;  // Simple fraction
+      if (mMixed) D = 9.0; // Mixed number
 
       const tx = (geom.mid.x + D * geom.normal.x) * scale;
       const ty = (geom.mid.y + D * geom.normal.y) * scale;
@@ -1403,27 +2432,32 @@
 
       if (mMixed) {
         const w = mMixed[1], n = mMixed[2], d = mMixed[3];
-        const barW = Math.max(n.length, d.length) * 8 + 4;
-        const xOffset = 7.5;
+        const barW = Math.max(n.length, d.length) * 7.5 + 4;
+        const xOffset = 7.0;
 
         labelG.innerHTML = `
-          <text x="-${xOffset}" y="3" text-anchor="middle" font-size="12.5" font-weight="800" fill="#2d3436">${w}</text>
-          <text x="${xOffset}" y="-7.5" text-anchor="middle" font-size="10" font-weight="800" fill="#2d3436">${n}</text>
-          <line x1="${xOffset - barW / 2}" y1="-4.5" x2="${xOffset + barW / 2}" y2="-4.5" stroke="#2d3436" stroke-width="1.3"/>
-          <text x="${xOffset}" y="3.5" text-anchor="middle" font-size="10" font-weight="800" fill="#2d3436">${d}</text>
+          <text x="-${xOffset}" y="1.0" text-anchor="middle" font-size="12" font-weight="800" fill="#2d3436">${w}</text>
+          <text x="${xOffset}" y="-5.5" text-anchor="middle" font-size="9.5" font-weight="800" fill="#2d3436">${n}</text>
+          <line x1="${xOffset - barW / 2}" y1="-2.2" x2="${xOffset + barW / 2}" y2="-2.2" stroke="#2d3436" stroke-width="1.3"/>
+          <text x="${xOffset}" y="6.0" text-anchor="middle" font-size="9.5" font-weight="800" fill="#2d3436">${d}</text>
         `;
       } else if (mFrac) {
         const n = mFrac[1], d = mFrac[2];
-        const barW = Math.max(n.length, d.length) * 8.5 + 4;
+        const barW = Math.max(n.length, d.length) * 8.2 + 4;
 
         labelG.innerHTML = `
-          <text x="0" y="-8.5" text-anchor="middle" font-size="11" font-weight="800" fill="#2d3436">${n}</text>
-          <line x1="-${barW / 2}" y1="-4.5" x2="${barW / 2}" y2="-4.5" stroke="#2d3436" stroke-width="1.3"/>
-          <text x="0" y="3.5" text-anchor="middle" font-size="11" font-weight="800" fill="#2d3436">${d}</text>
+          <text x="0" y="-5.5" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2d3436">${n}</text>
+          <line x1="-${barW / 2}" y1="-2.5" x2="${barW / 2}" y2="-2.5" stroke="#2d3436" stroke-width="1.3"/>
+          <text x="0" y="6.0" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2d3436">${d}</text>
         `;
       } else {
+        // Plain text: ^n draws a superscript, and long labels shrink to fit the edge
+        const visLen = clean.replace(/\^/g, '').length;
+        const avail = SIDE_LEN * scale * 0.66;
+        let fs = 12.5;
+        if (visLen * fs * 0.6 > avail) fs = Math.max(6.5, avail / (visLen * 0.6));
         labelG.innerHTML = `
-          <text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="12.5" font-weight="800" fill="#2d3436">${clean}</text>
+          <text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="${fs.toFixed(2)}" font-weight="800" fill="#2d3436">${richSvgText(clean, fs)}</text>
         `;
       }
 
@@ -1467,10 +2501,11 @@
           g.setAttribute("transform", `translate(${slot.cx}, ${slot.cy}) scale(${scaleFactor}) rotate(${state.rotation})`);
 
           g.setAttribute("draggable", "true");
+          
           g.addEventListener("dragstart", (e) => {
+            draggedPieceId = piece.id;
             selectedPieceId = piece.id;
-            e.dataTransfer.setData("text/plain", piece.id);
-            renderAll();
+            e.dataTransfer.setData("text/plain", String(piece.id));
           });
 
           g.addEventListener("click", (e) => {
@@ -1478,6 +2513,8 @@
             selectedPieceId = (selectedPieceId === piece.id) ? null : piece.id;
             renderAll();
           });
+
+          attachPointerDragHandlers(g, piece.id);
 
           piecesLayer.appendChild(g);
         }
@@ -1519,10 +2556,11 @@
           card.appendChild(svg);
 
           card.setAttribute("draggable", "true");
+          
           card.addEventListener("dragstart", (e) => {
+            draggedPieceId = piece.id;
             selectedPieceId = piece.id;
-            e.dataTransfer.setData("text/plain", piece.id);
-            renderAll();
+            e.dataTransfer.setData("text/plain", String(piece.id));
           });
 
           card.addEventListener("click", () => {
@@ -1530,12 +2568,166 @@
             renderAll();
           });
 
+          attachPointerDragHandlers(card, piece.id);
+
           trayContainer.appendChild(card);
         }
       });
 
       document.getElementById("piece-count").textContent = `${trayCount} / ${PIECES.length} in Tray`;
       trayContainer.scrollTop = prevScrollTop;
+    }
+
+    /**
+     * Universal Pointer Drag System for Touch, Trackpad & Mouse
+     */
+    function attachPointerDragHandlers(element, pieceId) {
+      let isPointerDown = false;
+      let startX = 0, startY = 0;
+      let hasDragged = false;
+
+      element.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0 && e.pointerType === "mouse") return;
+        isPointerDown = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        hasDragged = false;
+        draggedPieceId = pieceId;
+
+        const onPointerMove = (e) => {
+          if (!isPointerDown) return;
+          const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+          if (dist > 5 && !hasDragged) {
+            hasDragged = true;
+            selectedPieceId = pieceId;
+            startFloatingDragPreview(pieceId, e.clientX, e.clientY);
+          }
+
+          if (hasDragged) {
+            updateFloatingDragPreview(e.clientX, e.clientY);
+          }
+        };
+
+        const onPointerUp = (e) => {
+          if (!isPointerDown) return;
+          isPointerDown = false;
+
+          window.removeEventListener("pointermove", onPointerMove);
+          window.removeEventListener("pointerup", onPointerUp);
+          window.removeEventListener("pointercancel", onPointerUp);
+
+          if (hasDragged) {
+            stopFloatingDragPreview();
+            dropPieceAtPoint(pieceId, e.clientX, e.clientY);
+          }
+        };
+
+        window.addEventListener("pointermove", onPointerMove);
+        window.addEventListener("pointerup", onPointerUp);
+        window.addEventListener("pointercancel", onPointerUp);
+      });
+    }
+
+    function startFloatingDragPreview(pieceId, x, y) {
+      const piece = PIECES[pieceId];
+      const state = pieceState[pieceId];
+
+      const circumR = (2 / 3) * HEIGHT + 12;
+      const viewBoxStr = `${-circumR} ${-circumR} ${2 * circumR} ${2 * circumR}`;
+
+      dragPreview.innerHTML = '';
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", viewBoxStr);
+      svg.setAttribute("width", "110");
+      svg.setAttribute("height", "110");
+
+      const g = createPieceSVGGroup(piece, 1);
+      g.setAttribute("transform", `rotate(${state.rotation})`);
+      svg.appendChild(g);
+
+      dragPreview.appendChild(svg);
+      dragPreview.style.display = 'block';
+      updateFloatingDragPreview(x, y);
+    }
+
+    function updateFloatingDragPreview(x, y) {
+      dragPreview.style.left = `${x}px`;
+      dragPreview.style.top = `${y}px`;
+    }
+
+    function stopFloatingDragPreview() {
+      dragPreview.style.display = 'none';
+      dragPreview.innerHTML = '';
+    }
+
+    function dropPieceAtPoint(pieceId, x, y) {
+      dragPreview.style.display = 'none';
+      const elements = document.elementsFromPoint(x, y);
+
+      if (!elements || elements.length === 0) return;
+
+      let targetSlotId = null;
+      for (const el of elements) {
+        if (el.getAttribute && el.getAttribute("data-slot-id") !== null) {
+          targetSlotId = parseInt(el.getAttribute("data-slot-id"));
+          break;
+        }
+        const slotEl = el.closest ? el.closest("[data-slot-id]") : null;
+        if (slotEl) {
+          targetSlotId = parseInt(slotEl.getAttribute("data-slot-id"));
+          break;
+        }
+      }
+
+      if (targetSlotId !== null && !isNaN(targetSlotId)) {
+        placePieceInSlot(pieceId, targetSlotId);
+        return;
+      }
+
+      const droppedInTray = elements.some(el => 
+        el.id === "workspace" || el.id === "tray-container" || 
+        (el.closest && (el.closest("#workspace") || el.closest("#tray-container")))
+      );
+
+      if (droppedInTray) {
+        returnPieceToTray(pieceId);
+        return;
+      }
+
+      renderAll();
+    }
+
+    /**
+     * Drag & Drop event handlers on Tray Container & Workspace
+     */
+    function setupTrayDragListeners() {
+      const handleDragOver = (e) => {
+        e.preventDefault();
+        workspace.classList.add("drag-over");
+        trayContainer.classList.add("drag-over");
+      };
+
+      const handleDragLeave = () => {
+        workspace.classList.remove("drag-over");
+        trayContainer.classList.remove("drag-over");
+      };
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        handleDragLeave();
+        const pId = e.dataTransfer.getData("text/plain") || draggedPieceId;
+        if (pId !== null && pId !== "") {
+          returnPieceToTray(parseInt(pId));
+        }
+      };
+
+      workspace.addEventListener("dragover", handleDragOver);
+      workspace.addEventListener("dragleave", handleDragLeave);
+      workspace.addEventListener("drop", handleDrop);
+
+      trayContainer.addEventListener("dragover", handleDragOver);
+      trayContainer.addEventListener("dragleave", handleDragLeave);
+      trayContainer.addEventListener("drop", handleDrop);
     }
 
     function renderAll() {
@@ -1553,7 +2745,7 @@
       if (isSolved) return;
 
       PIECES.forEach(p => {
-        if (pieceState[p.id].slotId === slotId) {
+        if (p.id !== pieceId && pieceState[p.id].slotId === slotId) {
           pieceState[p.id].slotId = null;
         }
       });
@@ -1563,6 +2755,14 @@
       clearFeedback();
       renderAll();
       checkAutoVictory();
+    }
+
+    function returnPieceToTray(pieceId) {
+      if (isSolved) return;
+      pieceState[pieceId].slotId = null;
+      if (selectedPieceId === pieceId) selectedPieceId = null;
+      clearFeedback();
+      renderAll();
     }
 
     function rotatePiece(pieceId) {
@@ -1597,24 +2797,19 @@
       if (!expr || typeof expr !== 'string') return null;
       let clean = expr.trim();
 
-      // Recurring decimals
       clean = clean.replace(/0\.333\.\.\.|0\.33\.\.\./g, '(1/3)');
       clean = clean.replace(/0\.666\.\.\.|0\.66\.\.\./g, '(2/3)');
       clean = clean.replace(/0\.166\.\.\.|0\.16\.\.\./g, '(1/6)');
       clean = clean.replace(/0\.833\.\.\.|0\.83\.\.\./g, '(5/6)');
 
-      // Percentages
       clean = clean.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
 
-      // Square roots & squares
       clean = clean.replace(/√(\d+(?:\.\d+)?)/g, 'Math.sqrt($1)');
       clean = clean.replace(/(\d+)²/g, '($1**2)');
       clean = clean.replace(/(\d+)\^2/g, '($1**2)');
 
-      // Mixed numbers e.g. 1 3/4 -> (1 + 3/4)
       clean = clean.replace(/(\d+)\s+(\d+)\/(\d+)/g, '($1 + $2/$3)');
 
-      // Operations
       clean = clean.replace(/×/g, '*').replace(/÷/g, '/');
 
       try {
@@ -1653,10 +2848,7 @@
         const labelA = pieceA.canonicalEdges[edgeAIdx];
         const labelB = pieceB.canonicalEdges[edgeBIdx];
 
-        const valA = evalExpr(labelA);
-        const valB = evalExpr(labelB);
-
-        if (valA !== null && valB !== null && Math.abs(valA - valB) < 1e-5) {
+        if (labelsMatch(labelA, labelB)) {
           correctCount++;
         } else {
           return;
@@ -1704,10 +2896,7 @@
           const labelA = pieceA.canonicalEdges[edgeAIdx];
           const labelB = pieceB.canonicalEdges[edgeBIdx];
 
-          const valA = evalExpr(labelA);
-          const valB = evalExpr(labelB);
-
-          const isMatch = (valA !== null && valB !== null && Math.abs(valA - valB) < 1e-5);
+          const isMatch = labelsMatch(labelA, labelB);
           if (isMatch) correctCount++;
 
           const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -1763,7 +2952,13 @@
       const sizeSelect = document.getElementById("puzzle-size-select");
       const selectedRows = parseInt(sizeSelect.value);
 
-      createFreshPuzzle(selectedRows);
+      if (sharedPuzzle) {
+        topicDisplayTitle = sharedPuzzle.t;
+        createFreshPuzzle(sharedPuzzle.r, sharedPuzzle.p);
+      } else {
+        createFreshPuzzle(selectedRows);
+      }
+      setupTrayDragListeners();
       renderAll();
 
       document.getElementById("start-screen").classList.add("hidden");
@@ -1817,10 +3012,9 @@
       a4Meta.textContent = `Topic: ${topicDisplayTitle} | Size: ${PIECES.length} Pieces`;
 
       const a4Svg = document.getElementById("a4-pieces-svg");
-      a4Svg.setAttribute("viewBox", "0 0 720 960"); // Maximised A4 printable canvas
+      a4Svg.setAttribute("viewBox", "0 0 720 960");
       a4Svg.innerHTML = '';
 
-      // Shuffled copy of pieces so touching edges do NOT match on sheet
       const printPieces = shuffleArray([...PIECES]);
       const N = printPieces.length;
 
@@ -1858,7 +3052,6 @@
         const cx = startX + (c + 1) * (bestS / 2);
         const cy = startY + r * H + (isUp ? (2 / 3) * H : (1 / 3) * H);
 
-        // Random rotation for extra scrambling
         const rot = (isUp ? 0 : 60) + Math.floor(Math.random() * 3) * 120;
 
         const g = createPieceSVGGroup(piece, geomScale, selectedPrintBgColor);
@@ -1875,7 +3068,6 @@
      * Resizer / Draggable Boundary Line Event Mechanics
      */
     const resizer = document.getElementById("resizer");
-    const workspace = document.getElementById("workspace");
     const mainContainer = document.getElementById("main-container");
     let isDraggingResizer = false;
 
@@ -1977,8 +3169,178 @@
       }
     });
 
-    // Initialize Setup Screen
+    /**
+     * Teacher share links
+     * The whole puzzle (grid size, title, colour and every matching pair) is stored
+     * in the #hash of the page address, so no server is needed.
+     */
+    let sharedPuzzle = null;
+    let shareState = null;
+    let currentPuzzleSpec = null;   // the puzzle on screen (set when a puzzle is created)
+
+    function bytesToB64url(bytes) {
+      let s = '';
+      for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function b64urlToBytes(str) {
+      str = str.replace(/-/g, '+').replace(/_/g, '/');
+      while (str.length % 4) str += '=';
+      const bin = atob(str);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+
+    async function encodePuzzle(obj) {
+      const bytes = new TextEncoder().encode(JSON.stringify(obj));
+      if (typeof CompressionStream !== 'undefined') {
+        try {
+          const cs = new CompressionStream('deflate-raw');
+          const w = cs.writable.getWriter();
+          w.write(bytes);
+          w.close();
+          const buf = await new Response(cs.readable).arrayBuffer();
+          return 'z' + bytesToB64url(new Uint8Array(buf));
+        } catch (e) { /* fall back to uncompressed */ }
+      }
+      return 'j' + bytesToB64url(bytes);
+    }
+
+    async function decodePuzzle(str) {
+      const kind = str[0];
+      let bytes = b64urlToBytes(str.slice(1));
+      if (kind === 'z') {
+        const ds = new DecompressionStream('deflate-raw');
+        const w = ds.writable.getWriter();
+        w.write(bytes);
+        w.close();
+        bytes = new Uint8Array(await new Response(ds.readable).arrayBuffer());
+      } else if (kind !== 'j') {
+        throw new Error('Unknown link format');
+      }
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    // Never trust link contents: check shape, length and colour format
+    function validateShared(d) {
+      if (!d || d.v !== 1) return null;
+      const r = parseInt(d.r);
+      if (![3, 4, 5, 6].includes(r)) return null;
+      if (!Array.isArray(d.p) || d.p.length !== r * (r - 1) * 3 / 2) return null;
+      const ok = x => typeof x === 'string' && x.length > 0 && x.length <= 60;
+      const pairs = [];
+      for (const q of d.p) {
+        if (!Array.isArray(q) || q.length < 2 || !ok(q[0]) || !ok(q[1])) return null;
+        const o = [q[0], q[1]];
+        if (q.length > 2) {
+          if (!ok(q[2])) return null;
+          o.push(q[2]);
+        }
+        pairs.push(o);
+      }
+      const t = (typeof d.t === 'string' && d.t) ? d.t.slice(0, 100) : 'Teacher puzzle';
+      const c = (typeof d.c === 'string' && /^#[0-9a-fA-F]{6}$/.test(d.c)) ? d.c : '#d0e6f6';
+      return { r, t, c, p: pairs };
+    }
+
+    function applyLinkMode(linkWasBad) {
+      document.body.classList.toggle('link-mode', !!sharedPuzzle);
+      document.getElementById('link-info').classList.toggle('hidden', !sharedPuzzle);
+      document.getElementById('link-error').classList.toggle('hidden', !linkWasBad);
+      document.getElementById('link-leave').style.display = sharedPuzzle ? 'inline-block' : 'none';
+      if (sharedPuzzle) {
+        document.getElementById('link-info-title').textContent = sharedPuzzle.t;
+        document.getElementById('link-info-size').textContent = `${sharedPuzzle.r * sharedPuzzle.r} pieces`;
+        selectPrintColor(sharedPuzzle.c, null);
+      }
+    }
+
+    async function syncFromHash() {
+      const m = location.hash.match(/^#p=([A-Za-z0-9_-]+)$/);
+      let good = false;
+      sharedPuzzle = null;
+      if (m) {
+        try {
+          const d = validateShared(await decodePuzzle(m[1]));
+          if (d) { sharedPuzzle = d; good = true; }
+        } catch (e) { /* invalid link */ }
+      }
+      applyLinkMode(!!m && !good);
+    }
+
+    function leaveLinkMode(ev) {
+      if (ev) ev.preventDefault();
+      history.replaceState(null, '', location.pathname + location.search);
+      syncFromHash();
+    }
+
+    async function renderShare(data, canRegenerate) {
+      const enc = await encodePuzzle(data);
+      const url = `${location.href.split('#')[0].split('?')[0]}#p=${enc}`;
+      shareState = { data, url };
+
+      document.getElementById('share-summary').textContent =
+        `${data.t} • ${data.r * data.r} pieces`;
+      document.getElementById('share-url').value = url;
+      document.getElementById('share-length').textContent = `${url.length} characters`;
+      document.getElementById('share-warning-file').classList.toggle('hidden', location.protocol !== 'file:');
+      document.getElementById('share-warning-long').classList.toggle('hidden', url.length < 2000);
+      document.getElementById('btn-regen-share').classList.toggle('hidden', !canRegenerate);
+      document.getElementById('share-key').innerHTML = data.p
+        .map(p => `<div class="key-row"><span>${prettyLabelHtml(p[0])}</span><b>↔</b><span>${prettyLabelHtml(p[1])}</span></div>`)
+        .join('');
+      document.getElementById('btn-copy-link').textContent = '📋 Copy link';
+    }
+
+    // New puzzle built from the options on the setup screen
+    async function generateShare() {
+      const rows = parseInt(document.getElementById('puzzle-size-select').value);
+      const config = readTopicConfigFromUI();
+      const pairs = generateFreshPairs(rows * (rows - 1) * 3 / 2, config);
+      await renderShare({ v: 1, r: rows, t: topicDisplayTitle, c: selectedPrintBgColor, p: pairs }, true);
+    }
+
+    // mode 'current' shares the puzzle being played; 'new' builds one from the setup options
+    async function openShareDialog(mode) {
+      if (mode === 'current' && currentPuzzleSpec) await renderShare(currentPuzzleSpec, false);
+      else await generateShare();
+      document.getElementById('share-modal').classList.remove('hidden');
+    }
+
+    function closeShareDialog() {
+      document.getElementById('share-modal').classList.add('hidden');
+    }
+
+    async function copyShareLink() {
+      const inp = document.getElementById('share-url');
+      const btn = document.getElementById('btn-copy-link');
+      try {
+        await navigator.clipboard.writeText(inp.value);
+      } catch (e) {
+        inp.focus();
+        inp.select();
+        try { document.execCommand('copy'); } catch (e2) { /* ignore */ }
+      }
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Copy link'; }, 2000);
+    }
+
+    function tryShareLink() {
+      if (shareState) window.open(shareState.url, '_blank');
+    }
+
+    window.addEventListener('hashchange', async () => {
+      await syncFromHash();
+      showSetupScreen();
+    });
+
+    // Initialize: open any shared puzzle in the address, then show the setup screen
     showSetupScreen();
+    loadSettingsFromURL();
+    syncFromHash();
+
   </script>
 </body>
 </html>
