@@ -155,7 +155,7 @@
     #start-screen {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 240, 240, 0.96);
+      background: #fff0f0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -831,6 +831,11 @@
         ⚠️ That puzzle link couldn't be read (it may have been cut short when it was copied). Ask your teacher for a new one, or set up your own puzzle below.
       </div>
 
+      <div class="input-group setup-only">
+        <label for="activity-name-input">Activity Name (optional):</label>
+        <input type="text" id="activity-name-input" placeholder="e.g. Week 4 Revision" maxlength="40" oninput="syncActivityNameInputs('activity-name-input')">
+      </div>
+
       <div class="input-group">
         <label for="player-name-input">Player Name:</label>
         <input type="text" id="player-name-input" placeholder="Enter your name" value="Player" maxlength="25">
@@ -1154,6 +1159,10 @@
   <div id="share-modal" class="hidden no-print">
     <div class="share-card">
       <h2>👩‍🏫 Student link</h2>
+      <div class="input-group" style="margin: 10px 0 6px;">
+        <label for="share-act-name">Activity Name (optional):</label>
+        <input type="text" id="share-act-name" placeholder="e.g. Week 4 Revision" maxlength="40" oninput="syncActivityNameInputs('share-act-name')">
+      </div>
       <div id="share-summary" style="font-weight:600; color:#636e72;"></div>
       <input type="text" id="share-url" readonly onfocus="this.select()">
       <div style="font-size:0.78rem; color:#636e72;" id="share-length"></div>
@@ -1183,8 +1192,8 @@
   var d = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName('Triangle Puzzle Results') || ss.insertSheet('Triangle Puzzle Results');
-  if (sh.getLastRow() === 0) sh.appendRow(['Date','Name','Topic','Size','Pieces','Time (s)']);
-  sh.appendRow([new Date(), d.name, d.topic, d.size, d.pieces, d.time]);
+  if (sh.getLastRow() === 0) sh.appendRow(['Date','Activity Name','Student Name','Topic','Size','Pieces','Time (s)']);
+  sh.appendRow([new Date(), d.activity || '', d.name, d.topic, d.size, d.pieces, d.time]);
   return ContentService.createTextOutput('ok');
 }
 function doGet() { return ContentService.createTextOutput('Nugget results endpoint is running.'); }</pre>
@@ -1196,7 +1205,7 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
           <button class="btn btn-small secondary" style="padding:4px 10px; font-size:0.85rem;" onclick="testResults()">Send test result</button>
           <span id="t-res" style="font-size:.85rem; color:#636e72;"></span>
         </div>
-        <p style="font-size:.82rem;color:#636e72;margin-top:6px;">Each finished puzzle sends player name, topic, grid size, number of pieces, and time taken in seconds.</p>
+        <p style="font-size:.82rem;color:#636e72;margin-top:6px;">Each finished puzzle sends activity name, student name, topic, grid size, number of pieces, and time taken in seconds.</p>
       </details>
       <details>
         <summary>Answer key (the matching pairs)</summary>
@@ -1314,6 +1323,16 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       }
     }
 
+    function syncActivityNameInputs(sourceId) {
+      const src = document.getElementById(sourceId);
+      if (!src) return;
+      const val = src.value;
+      const targetId = sourceId === 'activity-name-input' ? 'share-act-name' : 'activity-name-input';
+      const target = document.getElementById(targetId);
+      if (target) target.value = val;
+      if (typeof updateShareFromUI === 'function') updateShareFromUI();
+    }
+
     function updateTopicPanel() {
       const topic = document.getElementById("topic-select").value;
       const panels = document.querySelectorAll(".sub-options-panel");
@@ -1361,7 +1380,9 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       const resEl = document.getElementById('t-res');
       if (!u) { if (resEl) resEl.textContent = 'Paste the Web app URL first.'; return; }
       if (resEl) resEl.textContent = 'Sending test result...';
-      post(u, { name: 'Test student', topic: 'Times Tables', size: '5x5', pieces: 25, time: 42 })
+      const actInput = document.getElementById('share-act-name') || document.getElementById('activity-name-input');
+      const actName = actInput ? actInput.value.trim() : 'Test Activity';
+      post(u, { activity: actName || 'Test Activity', name: 'Test student', topic: 'Times Tables', size: '5x5', pieces: 25, time: 42 })
         .then(() => { if (resEl) resEl.textContent = 'Sent! Check your sheet for a "Triangle Puzzle Results" tab (can take a few seconds).'; })
         .catch(() => { if (resEl) resEl.textContent = 'Could not send - check the URL.'; });
     }
@@ -1390,7 +1411,15 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       const st = document.getElementById('send-status');
       if (st) st.textContent = 'Sending your results to your teacher...';
 
+      const actName = (sharedPuzzle && sharedPuzzle.a) 
+        ? sharedPuzzle.a 
+        : (currentPuzzleSpec && currentPuzzleSpec.a 
+            ? currentPuzzleSpec.a 
+            : ((document.getElementById('share-act-name') && document.getElementById('share-act-name').value.trim()) || 
+               (document.getElementById('activity-name-input') && document.getElementById('activity-name-input').value.trim()) || ''));
+
       const payload = {
+        activity: actName,
         name: playerName,
         topic: topicDisplayTitle,
         size: `${R}x${R}`,
@@ -2452,7 +2481,13 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
         freshPairs = generateFreshPairs(INTERIOR_EDGES.length, activeTopicConfig);
       }
       registerMatchKeys(freshPairs);
+      
+      const actInput = document.getElementById('activity-name-input') || document.getElementById('share-act-name');
+      const actName = actInput ? actInput.value.trim() : '';
+
       currentPuzzleSpec = { v: 1, r: rows, t: topicDisplayTitle, c: selectedPrintBgColor, p: freshPairs.map(p => p.slice()) };
+      if (actName) currentPuzzleSpec.a = actName;
+
       const slotCanonicalEdges = Array.from({ length: SLOTS.length }, () => ["", "", ""]);
 
       INTERIOR_EDGES.forEach((ie, idx) => {
@@ -2486,7 +2521,8 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       isCheckingActive = false;
       isSolved = false;
 
-      document.getElementById("header-subtitle").textContent = `${topicDisplayTitle} • Match touching edges to form one large triangle!`;
+      const headerTitleText = (sharedPuzzle && sharedPuzzle.a) ? sharedPuzzle.a : (actName ? actName : topicDisplayTitle);
+      document.getElementById("header-subtitle").textContent = `${headerTitleText} • Match touching edges to form one large triangle!`;
     }
 
     /**
@@ -3089,7 +3125,7 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       const selectedRows = parseInt(sizeSelect.value);
 
       if (sharedPuzzle) {
-        topicDisplayTitle = sharedPuzzle.t;
+        topicDisplayTitle = sharedPuzzle.a || sharedPuzzle.t;
         createFreshPuzzle(sharedPuzzle.r, sharedPuzzle.p);
       } else {
         createFreshPuzzle(selectedRows);
@@ -3465,7 +3501,7 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       document.getElementById('link-error').classList.toggle('hidden', !linkWasBad);
       document.getElementById('link-leave').style.display = sharedPuzzle ? 'inline-block' : 'none';
       if (sharedPuzzle) {
-        document.getElementById('link-info-title').textContent = sharedPuzzle.a || sharedPuzzle.t;
+        document.getElementById('link-info-title').textContent = sharedPuzzle.a ? `${sharedPuzzle.a} (${sharedPuzzle.t})` : sharedPuzzle.t;
         document.getElementById('link-info-size').textContent = `${sharedPuzzle.r * sharedPuzzle.r} pieces`;
         selectPrintColor(sharedPuzzle.c, null);
       }
@@ -3495,7 +3531,8 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
     }
 
     async function renderShare(data, canRegenerate) {
-      const actName = document.getElementById('share-act-name') ? document.getElementById('share-act-name').value.trim() : '';
+      const actInput = document.getElementById('share-act-name') || document.getElementById('activity-name-input');
+      const actName = actInput ? actInput.value.trim() : '';
       const webUrl = checkUrl();
       if (actName) data.a = actName; else delete data.a;
       if (webUrl) data.u = webUrl; else delete data.u;
@@ -3527,7 +3564,11 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       const rows = parseInt(document.getElementById('puzzle-size-select').value);
       const config = readTopicConfigFromUI();
       const pairs = generateFreshPairs(rows * (rows - 1) * 3 / 2, config);
-      await renderShare({ v: 1, r: rows, t: topicDisplayTitle, c: selectedPrintBgColor, p: pairs }, true);
+      const actInput = document.getElementById('share-act-name') || document.getElementById('activity-name-input');
+      const actName = actInput ? actInput.value.trim() : '';
+      const data = { v: 1, r: rows, t: topicDisplayTitle, c: selectedPrintBgColor, p: pairs };
+      if (actName) data.a = actName;
+      await renderShare(data, true);
     }
 
     async function openShareDialog(mode) {
@@ -3535,8 +3576,17 @@ function doGet() { return ContentService.createTextOutput('Nugget results endpoi
       if (uEl && !uEl.value && activeResultsUrl) {
         uEl.value = activeResultsUrl;
       }
-      if (mode === 'current' && currentPuzzleSpec) await renderShare(currentPuzzleSpec, false);
-      else await generateShare();
+      if (mode === 'current' && currentPuzzleSpec) {
+        if (currentPuzzleSpec.a) {
+          const actIn1 = document.getElementById('share-act-name');
+          const actIn2 = document.getElementById('activity-name-input');
+          if (actIn1) actIn1.value = currentPuzzleSpec.a;
+          if (actIn2) actIn2.value = currentPuzzleSpec.a;
+        }
+        await renderShare(currentPuzzleSpec, false);
+      } else {
+        await generateShare();
+      }
       document.getElementById('share-modal').classList.remove('hidden');
     }
 
