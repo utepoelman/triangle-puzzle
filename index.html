@@ -93,6 +93,12 @@
       background-color: #636e72;
     }
 
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border-radius: 6px;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -189,7 +195,7 @@
       font-size: 0.92rem;
     }
 
-    .input-group input[type="text"], .input-group select {
+    .input-group input[type="text"], .input-group input[type="url"], .input-group select {
       padding: 9px 12px;
       font-size: 0.95rem;
       border: 2px solid #ccc;
@@ -578,7 +584,6 @@
       margin-bottom: 20px;
     }
 
-
     /* Teacher share link + link mode */
     body.link-mode .setup-only { display: none !important; }
 
@@ -662,6 +667,14 @@
     }
     .share-card details { margin: 10px 0; }
     .share-card summary { cursor: pointer; font-weight: bold; }
+    details.tdet {
+      width: 100%; box-sizing: border-box; text-align: left; margin: 10px 0;
+      border: 2px solid var(--secondary-color); border-radius: 10px; padding: 8px 12px; background: #fffafa;
+    }
+    details.tdet summary { cursor: pointer; font-weight: bold; font-size: 1rem; padding: 4px 0; }
+    details.tdet ol { margin-left: 20px; margin-top: 8px; font-size: 0.88rem; line-height: 1.5; }
+    details.tdet li { margin-bottom: 6px; }
+
     #share-key {
       max-height: 220px;
       overflow-y: auto;
@@ -1142,6 +1155,33 @@
     <div class="share-card">
       <h2>👩‍🏫 Student link</h2>
       <div id="share-summary" style="font-weight:600; color:#636e72;"></div>
+      
+      <div class="input-group" style="margin:10px 0 4px"><label>Activity name (optional)</label><input type="text" id="share-act-name" maxlength="60" placeholder="e.g. Room 12 - Friday Puzzle" oninput="updateShareFromUI()"></div>
+
+      <details class="tdet"><summary>Receive results automatically in a Google Sheet (optional)</summary>
+        <ol>
+          <li>Create a new Google Sheet at sheets.google.com.</li>
+          <li>Click <b>Extensions &rarr; Apps Script</b>. Delete anything in the editor, paste the code below and click <b>Save</b>.</li>
+          <li>Click <b>Deploy &rarr; New deployment</b>, choose the gear icon &rarr; <b>Web app</b>.</li>
+          <li>Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>, then <b>Deploy</b>. Approve the permissions (if Google warns you, click <i>Advanced &rarr; Go to project</i>).</li>
+          <li>Copy the <b>Web app URL</b>, paste it in the box below and press <b>Send test result</b>. A "Triangle Puzzle Results" tab should appear in your sheet.</li>
+          <li>Create your student link below. The URL is built into the link. If you later edit the script, use <b>Deploy &rarr; Manage deployments &rarr; Edit &rarr; New version</b> so the URL stays the same.</li>
+        </ol>
+        <pre id="gs-code" style="background:#f4f4f4;padding:10px;border-radius:8px;overflow:auto;font-size:.8rem;white-space:pre-wrap;user-select:text;-webkit-user-select:text;">function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Triangle Puzzle Results') || ss.insertSheet('Triangle Puzzle Results');
+  if (sh.getLastRow() === 0) sh.appendRow(['Date','Name','Activity','Size','Time (s)','Topic']);
+  sh.appendRow([new Date(), d.name, d.activity, d.size, d.time, d.topic]);
+  return ContentService.createTextOutput('ok');
+}
+function doGet() { return ContentService.createTextOutput('Triangle Puzzle results endpoint is running.'); }</pre>
+        <button class="btn btn-small secondary" onclick="copyText('gs-code','t-res')">Copy code</button>
+        <div class="input-group" style="width:100%;margin:8px 0"><label>Web app URL</label><input type="url" id="t-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="updateShareFromUI()"></div>
+        <button class="btn btn-small secondary" onclick="testResults()">Send test result</button> <span id="t-res" style="font-size:.9rem"></span>
+        <p style="font-size:.85rem;color:#636e72;margin-top:6px;">Each finished puzzle adds a row: date, name, activity, size, time and topic.</p>
+      </details>
+
       <input type="text" id="share-url" readonly onfocus="this.select()">
       <div style="font-size:0.78rem; color:#636e72;" id="share-length"></div>
       <div class="share-btns">
@@ -1170,7 +1210,7 @@
   <div class="main-container no-print" id="main-container">
     <div class="workspace" id="workspace">
       <div class="workspace-header">
-        <h2>Piece Tray</h2>
+        2 Piece Tray</h2>
         <span class="badge" id="piece-count">0 / 0 in Tray</span>
       </div>
       <div class="tray-scroll" id="tray-container"></div>
@@ -1204,6 +1244,7 @@
           <span id="cert-topic-text">Topic: Times Tables</span> • <span id="cert-size-text">Size: 25 Pieces</span>
         </div>
         <span id="cert-details" style="font-size: 0.9em; font-style: italic; color: #636e72;"></span>
+        <p id="send-status" style="font-size:.9rem;color:#636e72;margin-top:8px;"></p>
       </div>
       
       <div class="cert-signature-area">
@@ -1657,9 +1698,6 @@
 
     /**
      * ===== Matching registry =====
-     * Pairs from the newer topics carry a 3rd element ("match key"). Two edge
-     * labels match when their keys are equal. Older topics have no key and are
-     * compared numerically by evalExpr().
      */
     const MATCHKEY = new Map();
 
@@ -1680,13 +1718,12 @@
     }
 
     /**
-     * ===== Rich label helpers (superscripts via ^ and safe escaping) =====
+     * ===== Rich label helpers =====
      */
     function escXml(s) {
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // "^" followed by an (optionally negative) integer is drawn as a superscript
     function richSvgText(text, fs) {
       const raise = +(fs * 0.42).toFixed(2);
       const supSize = +(fs * 0.72).toFixed(2);
@@ -1707,7 +1744,6 @@
       return out;
     }
 
-    // Same markup as HTML (used for the teacher answer key)
     function prettyLabelHtml(s) {
       return escXml(s).replace(/\^(-?\d+)/g, '<sup>$1</sup>');
     }
@@ -1718,7 +1754,6 @@
     const NEW_TOPICS = ['unit_conversions', 'powers', 'like_terms', 'expand_brackets', 'index_laws',
       'trig_exact', 'prefixes', 'fraction_of', 'percent_of', 'clock_time', 'sci_notation'];
 
-    // Controls of the newer topics, saved in the settings-only link
     const NEW_SELECT_IDS = ['pw-mode', 'lt-level', 'eb-level', 'il-level', 'tr-units', 'tr-range', 'tr-surd', 'tr-pair',
       'pf-set', 'fo-level', 'fo-max', 'po-level', 'ct-step', 'ct-style', 'sn-mode', 'sn-mant'];
     const NEW_CHECK_IDS = ['uc-length', 'uc-mass', 'uc-volume', 'uc-area', 'uc-time', 'uc-decimals', 'pw-neg',
@@ -1730,14 +1765,12 @@
     const fmtNum = x => String(parseFloat(Number(x).toFixed(6)));
     const keyNum = x => String(Math.round(x * 1e9) / 1e9);
 
-    // 12500 -> "12 500" (non-breaking space); only for 5+ digit integer parts
     function groupDigits(s) {
       const m = String(s).match(/^(-?)(\d+)(\.\d+)?$/);
       if (!m || m[2].length < 5) return String(s);
       return m[1] + m[2].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0') + (m[3] || '');
     }
 
-    // Monomial like -2a^3b. exps = {a:3, b:1}; order = optional variable order
     function monoStr(coef, exps, order) {
       const vars = order || Object.keys(exps).sort();
       if (vars.length === 0) return String(coef);
@@ -1747,7 +1780,6 @@
       return coef + body;
     }
 
-    // Polynomial from [{c, v}] where v is '' for a constant, e.g. 3x - 12
     function polyStr(terms) {
       let s = '';
       terms.forEach((t, i) => {
@@ -1863,7 +1895,7 @@
         let inner, prod;
         if (Math.random() < 0.65) {
           let q;
-          do { q = rInt(1, 9); } while (gcd(p, q) !== 1);   // inner bracket has no common factor
+          do { q = rInt(1, 9); } while (gcd(p, q) !== 1);
           const s = rSign();
           inner = [{ c: p, v }, { c: s * q, v: '' }];
           prod = [{ c: m * p, v }, { c: m * s * q, v: '' }];
@@ -1871,7 +1903,7 @@
           let w;
           do { w = rPick(EB_VARS); } while (w === v);
           let r;
-          do { r = rInt(1, 4); } while (gcd(p, r) !== 1);   // inner bracket has no common factor
+          do { r = rInt(1, 4); } while (gcd(p, r) !== 1);
           const s = rSign();
           inner = [{ c: p, v }, { c: s * r, v: w }];
           prod = [{ c: m * p, v }, { c: m * s * r, v: w }];
@@ -1881,7 +1913,7 @@
       } else {
         const k = rInt(1, 5) * rSign(), s = rSign();
         let p, q;
-        do { p = rInt(1, 4); q = rInt(1, 9); } while (gcd(p, q) !== 1);   // inner bracket has no common factor
+        do { p = rInt(1, 4); q = rInt(1, 9); } while (gcd(p, q) !== 1);
         const kStr = k === 1 ? '' : (k === -1 ? '-' : String(k));
         label = `${kStr}${v}(${polyStr([{ c: p, v }, { c: s * q, v: '' }])})`;
         ans = polyStr([{ c: k * p, v: v + '^2' }, { c: k * s * q, v }]);
@@ -1889,7 +1921,7 @@
       return [label, ans, ans];
     }
 
-    /* ---------- Index laws / simplifying powers ---------- */
+    /* ---------- Index laws ---------- */
     const IL_VARS = ['a', 'b', 'c', 'm', 'n', 'p', 'q', 'x', 'y', 'z'];
 
     function genIndexPair(config) {
@@ -2152,7 +2184,6 @@
           const cls = p[2];
           p = orient(p);
           const key = `${p[0]}::${p[1]}`;
-          // Prefer a different "match class" for each pair; allow repeats only if the pool runs dry
           const classTaken = cls !== undefined && usedClasses.has(cls);
           if (!usedKeys.has(key) && !(classTaken && attempts < 1200)) {
             usedKeys.add(key);
@@ -2162,7 +2193,6 @@
         }
       }
 
-      // Small pools: reuse pairs so every edge still has a partner
       while (pairs.length < numPairs) {
         let p = null;
         for (let t = 0; t < 200 && !p; t++) p = generateSinglePair(config);
@@ -2425,9 +2455,6 @@
       });
     }
 
-    /**
-     * Renders expression labels positioned ultra-close to outer edge with perfectly centered fraction bars
-     */
     function appendSvgEdgeLabel(parentGroup, labelText, edgeIdx, scale = 1) {
       if (!labelText) return;
       const clean = labelText.trim();
@@ -2436,9 +2463,9 @@
       const mMixed = clean.match(/^(\d+)\s+(\d+)\/(\d+)$/);
       const mFrac = clean.match(/^(-?[\d√]+)\/([\d√]+)$/);
 
-      let D = 8.5;  // Plain text
-      if (mFrac) D = 9.2;  // Simple fraction
-      if (mMixed) D = 9.0; // Mixed number
+      let D = 8.5;
+      if (mFrac) D = 9.2;
+      if (mMixed) D = 9.0;
 
       const tx = (geom.mid.x + D * geom.normal.x) * scale;
       const ty = (geom.mid.y + D * geom.normal.y) * scale;
@@ -2467,7 +2494,6 @@
           <text x="0" y="6.0" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2d3436">${d}</text>
         `;
       } else {
-        // Plain text: ^n draws a superscript, and long labels shrink to fit the edge
         const visLen = clean.replace(/\^/g, '').length;
         const avail = SIDE_LEN * scale * 0.66;
         let fs = 12.5;
@@ -2597,7 +2623,7 @@
     }
 
     /**
-     * Universal Pointer Drag System for Touch, Trackpad & Mouse
+     * Universal Pointer Drag System
      */
     function attachPointerDragHandlers(element, pieceId) {
       let isPointerDown = false;
@@ -2606,7 +2632,7 @@
 
       element.addEventListener("pointerdown", (e) => {
         if (e.button !== 0 && e.pointerType === "mouse") return;
-        if (gestureLock) return;   // a second finger is down: that is a twist, not a drag
+        if (gestureLock) return;
         if (e.pointerType === "touch" && gesturePieceId === null) gesturePieceId = pieceId;
         isPointerDown = true;
         startX = e.clientX;
@@ -2637,7 +2663,6 @@
           window.removeEventListener("pointercancel", onPointerUp);
 
           if (gestureLock) {
-            // Two-finger twist in progress or just finished: never drop a piece
             if (hasDragged) stopFloatingDragPreview();
             return;
           }
@@ -2723,9 +2748,6 @@
       renderAll();
     }
 
-    /**
-     * Drag & Drop event handlers on Tray Container & Workspace
-     */
     function setupTrayDragListeners() {
       const handleDragOver = (e) => {
         e.preventDefault();
@@ -2884,6 +2906,7 @@
       if (correctCount === INTERIOR_EDGES.length) {
         isSolved = true;
         setSpeech(`🎉 Fantastic job, ${playerName}! You solved the puzzle!`);
+        sendResults();
         setTimeout(showCertificate, 2000);
       }
     }
@@ -2946,6 +2969,7 @@
       } else if (correctCount === totalEdges && totalChecked === totalEdges) {
         isSolved = true;
         setSpeech(`🎉 Woohoo! All ${totalEdges} edges match perfectly! You solved it!`);
+        sendResults();
         setTimeout(showCertificate, 2000);
       } else {
         setSpeech(`Checked ${totalChecked} touching edges: ${correctCount} Correct (Green), ${totalChecked - correctCount} Mismatched (Red).`);
@@ -3180,7 +3204,6 @@
 
     document.getElementById("btn-check").addEventListener("click", toggleCheck);
 
-    // Keyboard rotation shortcut
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space" || e.key.toLowerCase() === "r") {
         e.preventDefault();
@@ -3188,7 +3211,6 @@
       }
     });
 
-    // Turn buttons (for tablets and phones without a keyboard)
     function rotateSelected(step) {
       if (selectedPieceId === null) {
         setSpeech("Tap a piece first, then turn it!");
@@ -3200,14 +3222,13 @@
     document.getElementById("btn-rotate-right").addEventListener("click", () => rotateSelected(60));
 
     /**
-     * Two-finger twist: put two fingers down (the first on a piece) and turn them like a
-     * real puzzle piece. The piece snaps to the nearest 60 degrees as the fingers twist.
+     * Touch Gestures
      */
-    const touchPointers = new Map();   // pointerId -> {x, y} for fingers currently down
-    let gesturePieceId = null;         // piece under the first finger
-    let gestureLock = false;           // true while two or more fingers are down
-    let twist = null;                  // {pieceId, last, acc} while twisting
-    let suppressClickUntil = 0;        // ignore the tap that ends a gesture
+    const touchPointers = new Map();
+    let gesturePieceId = null;
+    let gestureLock = false;
+    let twist = null;
+    let suppressClickUntil = 0;
 
     function fingerAngle(a, b) {
       return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
@@ -3224,7 +3245,6 @@
         const pts = [...touchPointers.values()];
         twist = { pieceId: gesturePieceId, last: fingerAngle(pts[0], pts[1]), acc: 0 };
         selectedPieceId = gesturePieceId;
-        // Keep receiving finger events even though the piece is redrawn as it turns
         touchPointers.forEach((_, id) => {
           try { document.body.setPointerCapture(id); } catch (err) { /* ignore */ }
         });
@@ -3255,7 +3275,6 @@
       if (touchPointers.size === 0) {
         if (gestureLock) suppressClickUntil = Date.now() + 400;
         gesturePieceId = null;
-        // Reset after the drag handlers have seen this pointer-up
         setTimeout(() => { if (touchPointers.size === 0) gestureLock = false; }, 0);
       }
     }
@@ -3270,13 +3289,65 @@
     });
 
     /**
-     * Teacher share links
-     * The whole puzzle (grid size, title, colour and every matching pair) is stored
-     * in the #hash of the page address, so no server is needed.
+     * Teacher Spreadsheet Results & Share Links
      */
     let sharedPuzzle = null;
     let shareState = null;
-    let currentPuzzleSpec = null;   // the puzzle on screen (set when a puzzle is created)
+    let currentPuzzleSpec = null;
+
+    function copyText(id, msgId) {
+      const el = document.getElementById(id);
+      el.select && el.select();
+      const t = el.value !== undefined ? el.value : el.textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+        .then(() => document.getElementById(msgId).textContent = 'Copied!')
+        .catch(() => document.getElementById(msgId).textContent = 'Select the text and copy it (Ctrl/Cmd+C).');
+    }
+
+    function checkUrl() {
+      const u = document.getElementById('t-url').value.trim();
+      if (u && !u.startsWith('https://script.google.com/')) {
+        alert('The Web app URL should start with https://script.google.com/');
+        return null;
+      }
+      return u;
+    }
+
+    function post(u, d) {
+      return fetch(u, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(d)
+      });
+    }
+
+    function testResults() {
+      const u = checkUrl();
+      if (u === null) return;
+      if (!u) { document.getElementById('t-res').textContent = 'Paste the Web app URL first.'; return; }
+      post(u, { name: 'Test student', activity: 'Test', size: '25 Pieces', time: 42, topic: 'Test Topic' })
+        .then(() => document.getElementById('t-res').textContent = 'Sent! Check your sheet for a "Triangle Puzzle Results" tab (can take a few seconds).')
+        .catch(() => document.getElementById('t-res').textContent = 'Could not send - check the URL.');
+    }
+
+    function sendResults() {
+      const target = sharedPuzzle || currentPuzzleSpec;
+      if (!target || !target.u) return;
+      const st = document.getElementById('send-status');
+      if (st) st.textContent = 'Sending your results to your teacher...';
+      const secs = Math.round((new Date() - startTime) / 1000);
+      const payload = {
+        name: playerName,
+        activity: target.a || target.t || 'Triangle Puzzle',
+        size: `${PIECES.length} Pieces`,
+        time: secs,
+        topic: topicDisplayTitle
+      };
+      post(target.u, payload)
+        .then(() => { if (st) st.textContent = '✅ Results sent to your teacher.'; })
+        .catch(() => { if (st) st.textContent = '⚠️ Could not send results - tell your teacher.'; });
+    }
 
     function bytesToB64url(bytes) {
       let s = '';
@@ -3303,7 +3374,7 @@
           w.close();
           const buf = await new Response(cs.readable).arrayBuffer();
           return 'z' + bytesToB64url(new Uint8Array(buf));
-        } catch (e) { /* fall back to uncompressed */ }
+        } catch (e) { /* fall back */ }
       }
       return 'j' + bytesToB64url(bytes);
     }
@@ -3323,7 +3394,6 @@
       return JSON.parse(new TextDecoder().decode(bytes));
     }
 
-    // Never trust link contents: check shape, length and colour format
     function validateShared(d) {
       if (!d || d.v !== 1) return null;
       const r = parseInt(d.r);
@@ -3342,7 +3412,9 @@
       }
       const t = (typeof d.t === 'string' && d.t) ? d.t.slice(0, 100) : 'Teacher puzzle';
       const c = (typeof d.c === 'string' && /^#[0-9a-fA-F]{6}$/.test(d.c)) ? d.c : '#d0e6f6';
-      return { r, t, c, p: pairs };
+      const u = (typeof d.u === 'string' && d.u.startsWith('https://script.google.com/')) ? d.u : undefined;
+      const a = (typeof d.a === 'string' && d.a) ? d.a.slice(0, 60) : undefined;
+      return { r, t, c, p: pairs, u, a };
     }
 
     function applyLinkMode(linkWasBad) {
@@ -3351,7 +3423,7 @@
       document.getElementById('link-error').classList.toggle('hidden', !linkWasBad);
       document.getElementById('link-leave').style.display = sharedPuzzle ? 'inline-block' : 'none';
       if (sharedPuzzle) {
-        document.getElementById('link-info-title').textContent = sharedPuzzle.t;
+        document.getElementById('link-info-title').textContent = sharedPuzzle.a || sharedPuzzle.t;
         document.getElementById('link-info-size').textContent = `${sharedPuzzle.r * sharedPuzzle.r} pieces`;
         selectPrintColor(sharedPuzzle.c, null);
       }
@@ -3377,12 +3449,17 @@
     }
 
     async function renderShare(data, canRegenerate) {
+      const actName = document.getElementById('share-act-name').value.trim();
+      const webUrl = checkUrl();
+      if (actName) data.a = actName; else delete data.a;
+      if (webUrl) data.u = webUrl; else delete data.u;
+
       const enc = await encodePuzzle(data);
       const url = `${location.href.split('#')[0].split('?')[0]}#p=${enc}`;
       shareState = { data, url };
 
       document.getElementById('share-summary').textContent =
-        `${data.t} • ${data.r * data.r} pieces`;
+        `${data.a ? data.a + ' (' + data.t + ')' : data.t} • ${data.r * data.r} pieces`;
       document.getElementById('share-url').value = url;
       document.getElementById('share-length').textContent = `${url.length} characters`;
       document.getElementById('share-warning-file').classList.toggle('hidden', location.protocol !== 'file:');
@@ -3394,7 +3471,12 @@
       document.getElementById('btn-copy-link').textContent = '📋 Copy link';
     }
 
-    // New puzzle built from the options on the setup screen
+    function updateShareFromUI() {
+      if (shareState && shareState.data) {
+        renderShare(shareState.data, !currentPuzzleSpec || shareState.data !== currentPuzzleSpec);
+      }
+    }
+
     async function generateShare() {
       const rows = parseInt(document.getElementById('puzzle-size-select').value);
       const config = readTopicConfigFromUI();
@@ -3402,7 +3484,6 @@
       await renderShare({ v: 1, r: rows, t: topicDisplayTitle, c: selectedPrintBgColor, p: pairs }, true);
     }
 
-    // mode 'current' shares the puzzle being played; 'new' builds one from the setup options
     async function openShareDialog(mode) {
       if (mode === 'current' && currentPuzzleSpec) await renderShare(currentPuzzleSpec, false);
       else await generateShare();
@@ -3436,7 +3517,6 @@
       showSetupScreen();
     });
 
-    // Initialize: open any shared puzzle in the address, then show the setup screen
     showSetupScreen();
     loadSettingsFromURL();
     syncFromHash();
