@@ -1155,33 +1155,6 @@
     <div class="share-card">
       <h2>👩‍🏫 Student link</h2>
       <div id="share-summary" style="font-weight:600; color:#636e72;"></div>
-      
-      <div class="input-group" style="margin:10px 0 4px"><label>Activity name (optional)</label><input type="text" id="share-act-name" maxlength="60" placeholder="e.g. Room 12 - Friday Puzzle" oninput="updateShareFromUI()"></div>
-
-      <details class="tdet"><summary>Receive results automatically in a Google Sheet (optional)</summary>
-        <ol>
-          <li>Create a new Google Sheet at sheets.google.com.</li>
-          <li>Click <b>Extensions &rarr; Apps Script</b>. Delete anything in the editor, paste the code below and click <b>Save</b>.</li>
-          <li>Click <b>Deploy &rarr; New deployment</b>, choose the gear icon &rarr; <b>Web app</b>.</li>
-          <li>Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>, then <b>Deploy</b>. Approve the permissions (if Google warns you, click <i>Advanced &rarr; Go to project</i>).</li>
-          <li>Copy the <b>Web app URL</b>, paste it in the box below and press <b>Send test result</b>. A "Triangle Puzzle Results" tab should appear in your sheet.</li>
-          <li>Create your student link below. The URL is built into the link. If you later edit the script, use <b>Deploy &rarr; Manage deployments &rarr; Edit &rarr; New version</b> so the URL stays the same.</li>
-        </ol>
-        <pre id="gs-code" style="background:#f4f4f4;padding:10px;border-radius:8px;overflow:auto;font-size:.8rem;white-space:pre-wrap;user-select:text;-webkit-user-select:text;">function doPost(e) {
-  var d = JSON.parse(e.postData.contents);
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName('Triangle Puzzle Results') || ss.insertSheet('Triangle Puzzle Results');
-  if (sh.getLastRow() === 0) sh.appendRow(['Date','Name','Activity','Size','Time (s)','Topic']);
-  sh.appendRow([new Date(), d.name, d.activity, d.size, d.time, d.topic]);
-  return ContentService.createTextOutput('ok');
-}
-function doGet() { return ContentService.createTextOutput('Triangle Puzzle results endpoint is running.'); }</pre>
-        <button class="btn btn-small secondary" onclick="copyText('gs-code','t-res')">Copy code</button>
-        <div class="input-group" style="width:100%;margin:8px 0"><label>Web app URL</label><input type="url" id="t-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="updateShareFromUI()"></div>
-        <button class="btn btn-small secondary" onclick="testResults()">Send test result</button> <span id="t-res" style="font-size:.9rem"></span>
-        <p style="font-size:.85rem;color:#636e72;margin-top:6px;">Each finished puzzle adds a row: date, name, activity, size, time and topic.</p>
-      </details>
-
       <input type="text" id="share-url" readonly onfocus="this.select()">
       <div style="font-size:0.78rem; color:#636e72;" id="share-length"></div>
       <div class="share-btns">
@@ -1196,6 +1169,35 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
       <div id="share-warning-long" class="share-warning hidden">
         ⚠️ This link is quite long. Some messaging apps may cut it off. A smaller puzzle gives a shorter link.
       </div>
+      <details class="tdet" style="margin:12px 0; border:2px solid var(--secondary-color); border-radius:10px; padding:10px 12px; background:#fffafa; text-align:left;">
+        <summary style="cursor:pointer; font-weight:bold; color:var(--text-color);">Receive results automatically in a Google Sheet (optional)</summary>
+        <ol style="margin:10px 0 10px 20px; font-size:0.88rem; line-height:1.5;">
+          <li>Create a new Google Sheet at sheets.google.com.</li>
+          <li>Click <b>Extensions &rarr; Apps Script</b>. Delete anything in the editor, paste the code below and click <b>Save</b>.</li>
+          <li>Click <b>Deploy &rarr; New deployment</b>, choose the gear icon &rarr; <b>Web app</b>.</li>
+          <li>Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>, then <b>Deploy</b>. Approve the permissions (if Google warns you, click <i>Advanced &rarr; Go to project</i>).</li>
+          <li>Copy the <b>Web app URL</b>, paste it in the box below and press <b>Send test result</b>. A "Triangle Puzzle Results" tab should appear in your sheet.</li>
+          <li>Copy your student link above. The spreadsheet URL is built into the link. If you later edit the script, use <b>Deploy &rarr; Manage deployments &rarr; Edit &rarr; New version</b> so the URL stays the same.</li>
+        </ol>
+        <pre id="gs-code" style="background:#f4f4f4;padding:10px;border-radius:8px;overflow:auto;font-size:.8rem;white-space:pre-wrap">function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Triangle Puzzle Results') || ss.insertSheet('Triangle Puzzle Results');
+  if (sh.getLastRow() === 0) sh.appendRow(['Date','Name','Topic','Size','Pieces','Time (s)']);
+  sh.appendRow([new Date(), d.name, d.topic, d.size, d.pieces, d.time]);
+  return ContentService.createTextOutput('ok');
+}
+function doGet() { return ContentService.createTextOutput('Nugget results endpoint is running.'); }</pre>
+        <div style="margin-top:6px;">
+          <button class="btn btn-small secondary" style="padding:4px 10px; font-size:0.85rem;" onclick="copyText('gs-code','t-res')">Copy code</button>
+        </div>
+        <div class="input-group" style="width:100%;margin:10px 0 6px;"><label for="t-url">Web app URL</label><input type="url" id="t-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="updateShareUrlWithSheet()"></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn-small secondary" style="padding:4px 10px; font-size:0.85rem;" onclick="testResults()">Send test result</button>
+          <span id="t-res" style="font-size:.85rem; color:#636e72;"></span>
+        </div>
+        <p style="font-size:.82rem;color:#636e72;margin-top:6px;">Each finished puzzle sends player name, topic, grid size, number of pieces, and time taken in seconds.</p>
+      </details>
       <details>
         <summary>Answer key (the matching pairs)</summary>
         <div id="share-key"></div>
@@ -1210,7 +1212,7 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
   <div class="main-container no-print" id="main-container">
     <div class="workspace" id="workspace">
       <div class="workspace-header">
-        2 Piece Tray</h2>
+        <h2>Piece Tray</h2>
         <span class="badge" id="piece-count">0 / 0 in Tray</span>
       </div>
       <div class="tray-scroll" id="tray-container"></div>
@@ -1244,7 +1246,7 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
           <span id="cert-topic-text">Topic: Times Tables</span> • <span id="cert-size-text">Size: 25 Pieces</span>
         </div>
         <span id="cert-details" style="font-size: 0.9em; font-style: italic; color: #636e72;"></span>
-        <p id="send-status" style="font-size:.9rem;color:#636e72;margin-top:8px;"></p>
+        <p id="send-status" style="font-size: 0.9rem; color: #636e72; margin-top: 10px; font-weight: bold;"></p>
       </div>
       
       <div class="cert-signature-area">
@@ -1324,6 +1326,84 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
     /**
      * Teacher Share Link Generator & URL Parameter Loader
      */
+
+    let activeResultsUrl = null;
+
+    function copyText(id, msgId) {
+      const el = document.getElementById(id);
+      if (el) {
+        if (el.select) el.select();
+        const t = el.value !== undefined ? el.value : el.textContent;
+        (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+          .then(() => { const m = document.getElementById(msgId); if (m) m.textContent = 'Copied!'; })
+          .catch(() => { const m = document.getElementById(msgId); if (m) m.textContent = 'Select the text and copy it (Ctrl/Cmd+C).'; });
+      }
+    }
+
+    function checkUrl() {
+      const uEl = document.getElementById('t-url');
+      if (!uEl) return '';
+      const u = uEl.value.trim();
+      if (u && !u.startsWith('https://script.google.com/')) {
+        alert('The Web app URL should start with https://script.google.com/');
+        return null;
+      }
+      return u;
+    }
+
+    function post(u, d) {
+      return fetch(u, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(d) });
+    }
+
+    function testResults() {
+      const u = checkUrl();
+      if (u === null) return;
+      const resEl = document.getElementById('t-res');
+      if (!u) { if (resEl) resEl.textContent = 'Paste the Web app URL first.'; return; }
+      if (resEl) resEl.textContent = 'Sending test result...';
+      post(u, { name: 'Test student', topic: 'Times Tables', size: '5x5', pieces: 25, time: 42 })
+        .then(() => { if (resEl) resEl.textContent = 'Sent! Check your sheet for a "Triangle Puzzle Results" tab (can take a few seconds).'; })
+        .catch(() => { if (resEl) resEl.textContent = 'Could not send - check the URL.'; });
+    }
+
+    async function updateShareUrlWithSheet() {
+      if (!shareState || !shareState.data) return;
+      const uVal = checkUrl();
+      if (uVal === null) return;
+      if (uVal) {
+        shareState.data.u = uVal;
+        activeResultsUrl = uVal;
+      } else {
+        delete shareState.data.u;
+      }
+      const enc = await encodePuzzle(shareState.data);
+      const url = `${location.href.split('#')[0].split('?')[0]}#p=${enc}`;
+      shareState.url = url;
+      document.getElementById('share-url').value = url;
+      document.getElementById('share-length').textContent = `${url.length} characters`;
+      document.getElementById('share-warning-long').classList.toggle('hidden', url.length < 2000);
+    }
+
+    function sendResults(timeInSec) {
+      const url = activeResultsUrl || (sharedPuzzle ? sharedPuzzle.u : null);
+      if (!url) return;
+      const st = document.getElementById('send-status');
+      if (st) st.textContent = 'Sending your results to your teacher...';
+
+      const payload = {
+        name: playerName,
+        topic: topicDisplayTitle,
+        size: `${R}x${R}`,
+        pieces: PIECES.length,
+        time: timeInSec
+      };
+
+      post(url, payload)
+        .then(() => { if (st) st.textContent = '✅ Results sent to your teacher.'; })
+        .catch(() => { if (st) st.textContent = '⚠️ Could not send results - tell your teacher.'; });
+    }
+
+
     function getShareURL() {
       const params = new URLSearchParams();
       params.set("size", document.getElementById("puzzle-size-select").value);
@@ -1346,6 +1426,9 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
       NEW_CHECK_IDS.forEach(id => params.set(id, document.getElementById(id).checked ? "1" : "0"));
       params.set("color", selectedPrintBgColor.replace('#', ''));
 
+      const uVal = checkUrl();
+      if (uVal) params.set("u", uVal);
+
       const baseUrl = window.location.origin + window.location.pathname;
       return `${baseUrl}?${params.toString()}`;
     }
@@ -1366,6 +1449,9 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
 
     function loadSettingsFromURL() {
       const params = new URLSearchParams(window.location.search);
+      if (params.has("u")) {
+        activeResultsUrl = params.get("u");
+      }
       if (!params.has("topic") && !params.has("size")) return;
 
       if (params.has("size")) {
@@ -3041,7 +3127,12 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
       document.getElementById("cert-details").textContent = `Time Taken: ${timeStr}`;
       document.getElementById("cert-date").textContent = new Date().toLocaleDateString();
 
+      const sendSt = document.getElementById("send-status");
+      if (sendSt) sendSt.textContent = "";
+
       document.getElementById("certificate-container").classList.remove("hidden");
+
+      sendResults(diffSec);
     }
 
     function reviewPuzzle() {
@@ -3204,7 +3295,12 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
 
     document.getElementById("btn-check").addEventListener("click", toggleCheck);
 
+    // Keyboard rotation shortcut (bypassed when typing in text fields)
     window.addEventListener("keydown", (e) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
+        return; // Allow normal typing in text fields
+      }
       if (e.code === "Space" || e.key.toLowerCase() === "r") {
         e.preventDefault();
         if (selectedPieceId !== null) rotatePiece(selectedPieceId);
@@ -3295,60 +3391,6 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
     let shareState = null;
     let currentPuzzleSpec = null;
 
-    function copyText(id, msgId) {
-      const el = document.getElementById(id);
-      el.select && el.select();
-      const t = el.value !== undefined ? el.value : el.textContent;
-      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
-        .then(() => document.getElementById(msgId).textContent = 'Copied!')
-        .catch(() => document.getElementById(msgId).textContent = 'Select the text and copy it (Ctrl/Cmd+C).');
-    }
-
-    function checkUrl() {
-      const u = document.getElementById('t-url').value.trim();
-      if (u && !u.startsWith('https://script.google.com/')) {
-        alert('The Web app URL should start with https://script.google.com/');
-        return null;
-      }
-      return u;
-    }
-
-    function post(u, d) {
-      return fetch(u, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(d)
-      });
-    }
-
-    function testResults() {
-      const u = checkUrl();
-      if (u === null) return;
-      if (!u) { document.getElementById('t-res').textContent = 'Paste the Web app URL first.'; return; }
-      post(u, { name: 'Test student', activity: 'Test', size: '25 Pieces', time: 42, topic: 'Test Topic' })
-        .then(() => document.getElementById('t-res').textContent = 'Sent! Check your sheet for a "Triangle Puzzle Results" tab (can take a few seconds).')
-        .catch(() => document.getElementById('t-res').textContent = 'Could not send - check the URL.');
-    }
-
-    function sendResults() {
-      const target = sharedPuzzle || currentPuzzleSpec;
-      if (!target || !target.u) return;
-      const st = document.getElementById('send-status');
-      if (st) st.textContent = 'Sending your results to your teacher...';
-      const secs = Math.round((new Date() - startTime) / 1000);
-      const payload = {
-        name: playerName,
-        activity: target.a || target.t || 'Triangle Puzzle',
-        size: `${PIECES.length} Pieces`,
-        time: secs,
-        topic: topicDisplayTitle
-      };
-      post(target.u, payload)
-        .then(() => { if (st) st.textContent = '✅ Results sent to your teacher.'; })
-        .catch(() => { if (st) st.textContent = '⚠️ Could not send results - tell your teacher.'; });
-    }
-
     function bytesToB64url(bytes) {
       let s = '';
       for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
@@ -3436,7 +3478,11 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
       if (m) {
         try {
           const d = validateShared(await decodePuzzle(m[1]));
-          if (d) { sharedPuzzle = d; good = true; }
+          if (d) {
+            sharedPuzzle = d;
+            good = true;
+            if (d.u) activeResultsUrl = d.u;
+          }
         } catch (e) { /* invalid link */ }
       }
       applyLinkMode(!!m && !good);
@@ -3449,7 +3495,7 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
     }
 
     async function renderShare(data, canRegenerate) {
-      const actName = document.getElementById('share-act-name').value.trim();
+      const actName = document.getElementById('share-act-name') ? document.getElementById('share-act-name').value.trim() : '';
       const webUrl = checkUrl();
       if (actName) data.a = actName; else delete data.a;
       if (webUrl) data.u = webUrl; else delete data.u;
@@ -3485,6 +3531,10 @@ function doGet() { return ContentService.createTextOutput('Triangle Puzzle resul
     }
 
     async function openShareDialog(mode) {
+      const uEl = document.getElementById('t-url');
+      if (uEl && !uEl.value && activeResultsUrl) {
+        uEl.value = activeResultsUrl;
+      }
       if (mode === 'current' && currentPuzzleSpec) await renderShare(currentPuzzleSpec, false);
       else await generateShare();
       document.getElementById('share-modal').classList.remove('hidden');
